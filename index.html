@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#0f5d4e" />
+<title>Household</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f6f2ea;
+  --surface:#ffffff;
+  --surface-2:#fbf8f2;
+  --ink:#1b1a16;
+  --muted:#76716a;
+  --faint:#a8a39a;
+  --line:#e7e1d6;
+  --brand:#0f5d4e;
+  --brand-soft:#e2efe9;
+  --safe:#1c9e74;
+  --safe-soft:#e3f4ec;
+  --amber:#c98a1e;
+  --amber-soft:#f8eed6;
+  --red:#bc4630;
+  --red-soft:#f7e4df;
+  --chris:#2f6f9e;
+  --chris-soft:#e3eef6;
+  --katrina:#9e5a86;
+  --katrina-soft:#f4e6ef;
+  --shadow:0 1px 2px rgba(27,26,22,.05),0 8px 24px rgba(27,26,22,.06);
+  --radius:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Hanken Grotesk',system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  font-size:16px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;margin:0;letter-spacing:-.01em;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+input,select{font-family:inherit;font-size:16px;}
+
+/* App shell */
+#app{max-width:520px;margin:0 auto;min-height:100vh;position:relative;}
+.screen{display:none;padding:0 16px 120px;animation:fade .3s ease;}
+.screen.active{display:block;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+/* Header */
+header{
+  position:sticky;top:0;z-index:20;
+  background:linear-gradient(180deg,var(--paper) 70%,rgba(246,242,234,0));
+  padding:14px 16px 10px;
+}
+.topline{display:flex;align-items:center;justify-content:space-between;}
+.brandmark{display:flex;align-items:center;gap:9px;}
+.brandmark .dot{width:11px;height:11px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 4px var(--brand-soft);}
+.brandmark h1{font-size:18px;}
+.monthpill{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 8px 5px 12px;box-shadow:var(--shadow);}
+.monthpill .m{font-size:13.5px;font-weight:600;}
+.monthpill button{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--muted);font-size:15px;}
+.monthpill button:active{background:var(--surface-2);}
+.leavebadge{display:none;margin-top:8px;background:var(--katrina-soft);color:var(--katrina);border:1px solid #e8d3e1;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:600;align-items:center;gap:7px;}
+.leavebadge.on{display:flex;}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px;}
+.card.flush{padding:0;overflow:hidden;}
+.sectlabel{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:700;margin:22px 4px 10px;}
+
+/* Safe to spend hero */
+.hero{background:linear-gradient(155deg,#0f5d4e,#13705c 60%,#1c9e74);color:#fff;border:none;}
+.hero .lab{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:#bfe3d6;font-weight:700;}
+.hero .big{font-family:'Fraunces',serif;font-size:52px;line-height:1;font-weight:600;margin:8px 0 4px;letter-spacing:-.02em;}
+.hero .sub{font-size:13.5px;color:#cdeadf;}
+.hero .strip{display:flex;gap:10px;margin-top:16px;}
+.hero .chip{flex:1;background:rgba(255,255,255,.13);border-radius:12px;padding:9px 11px;}
+.hero .chip .k{font-size:11px;color:#bfe3d6;text-transform:uppercase;letter-spacing:.06em;font-weight:700;}
+.hero .chip .v{font-size:17px;font-weight:600;margin-top:2px;}
+
+/* allocation readout */
+.alloc{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.alloc .b{text-align:center;flex:1;}
+.alloc .b .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;}
+.alloc .b .v{font-size:18px;font-weight:600;margin-top:3px;}
+.alloc .sep{width:1px;align-self:stretch;background:var(--line);}
+
+/* progress rows */
+.row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);}
+.row:last-child{border-bottom:none;}
+.row .meta{flex:1;min-width:0;}
+.row .nm{font-weight:600;font-size:15px;display:flex;align-items:center;gap:7px;}
+.row .nm .who{font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;letter-spacing:.03em;}
+.who.chris{background:var(--chris-soft);color:var(--chris);}
+.who.katrina{background:var(--katrina-soft);color:var(--katrina);}
+.who.shared{background:var(--surface-2);color:var(--muted);}
+.row .vals{font-size:12.5px;color:var(--muted);margin-top:3px;}
+.bar{height:7px;border-radius:6px;background:var(--surface-2);overflow:hidden;margin-top:7px;}
+.bar > i{display:block;height:100%;border-radius:6px;transition:width .5s cubic-bezier(.2,.7,.2,1);}
+.bar.s-ok > i{background:var(--safe);}
+.bar.s-warn > i{background:var(--amber);}
+.bar.s-over > i{background:var(--red);}
+.row .amt{text-align:right;font-weight:600;font-size:15px;white-space:nowrap;}
+.row .amt small{display:block;font-weight:500;font-size:11.5px;color:var(--faint);}
+
+/* checklist */
+.check{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
+.check:last-child{border-bottom:none;}
+.check .box{width:24px;height:24px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;flex-shrink:0;color:#fff;font-size:14px;transition:.2s;}
+.check.done .box{background:var(--safe);border-color:var(--safe);}
+.check .nm{flex:1;font-weight:500;font-size:14.5px;}
+.check.done .nm{color:var(--muted);}
+.check .amt{font-weight:600;font-variant-numeric:tabular-nums;}
+.check .tag{font-size:10px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+
+/* alerts */
+.alert{display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border-radius:13px;margin-bottom:9px;font-size:13.5px;line-height:1.4;}
+.alert .ic{flex-shrink:0;font-size:15px;line-height:1.3;}
+.alert.warn{background:var(--amber-soft);color:#7c5510;}
+.alert.over{background:var(--red-soft);color:#8a2f1d;}
+.alert.info{background:var(--brand-soft);color:#0c4a3d;}
+
+/* per person */
+.pp{display:flex;gap:12px;}
+.pp .person{flex:1;background:var(--surface-2);border-radius:14px;padding:13px;}
+.pp .person .h{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px;}
+.pp .person .h .swatch{width:9px;height:9px;border-radius:50%;}
+.pp .person .v{font-size:22px;font-weight:600;font-family:'Fraunces',serif;margin-top:6px;}
+.pp .person .v small{font-size:13px;color:var(--muted);font-family:'Hanken Grotesk';font-weight:500;}
+.pp .person .barwrap{margin-top:9px;}
+
+/* log screen */
+.amountdisplay{text-align:center;padding:18px 0 10px;}
+.amountdisplay .dollar{font-family:'Fraunces',serif;font-size:46px;font-weight:600;letter-spacing:-.02em;}
+.amountdisplay .dollar.empty{color:var(--faint);}
+.toggle2{display:flex;background:var(--surface-2);border-radius:13px;padding:4px;gap:4px;margin:6px 0 16px;}
+.toggle2 button{flex:1;padding:10px;border-radius:10px;font-weight:600;font-size:14px;color:var(--muted);transition:.2s;}
+.toggle2 button.sel{background:var(--surface);color:var(--ink);box-shadow:var(--shadow);}
+.toggle2 button.sel.chris{color:var(--chris);}
+.toggle2 button.sel.katrina{color:var(--katrina);}
+.catgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.catgrid button{background:var(--surface-2);border:1.5px solid transparent;border-radius:14px;padding:13px 8px;font-size:13px;font-weight:600;color:var(--ink);min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;line-height:1.2;transition:.15s;}
+.catgrid button .dot{width:7px;height:7px;border-radius:50%;background:var(--brand);}
+.catgrid button.sel{border-color:var(--brand);background:var(--brand-soft);}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.keypad button{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;font-size:20px;font-weight:600;box-shadow:var(--shadow);}
+.keypad button:active{background:var(--surface-2);}
+.keypad button.wide{grid-column:span 1;}
+.bigbtn{width:100%;padding:16px;border-radius:15px;background:var(--brand);color:#fff;font-weight:700;font-size:16px;margin-top:14px;box-shadow:var(--shadow);transition:.15s;}
+.bigbtn:active{transform:scale(.99);}
+.bigbtn.ghost{background:var(--surface);color:var(--brand);border:1.5px solid var(--brand-soft);}
+.bigbtn:disabled{opacity:.4;}
+.noteinput{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px 14px;margin-top:10px;}
+
+/* recent tx */
+.tx{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);}
+.tx:last-child{border-bottom:none;}
+.tx .ic{width:36px;height:36px;border-radius:11px;background:var(--surface-2);display:grid;place-items:center;font-size:15px;flex-shrink:0;}
+.tx .meta{flex:1;min-width:0;}
+.tx .meta .t{font-weight:600;font-size:14.5px;}
+.tx .meta .s{font-size:12px;color:var(--muted);}
+.tx .amt{font-weight:600;font-variant-numeric:tabular-nums;}
+.tx .del{color:var(--faint);font-size:18px;padding:4px 8px;}
+
+/* setup forms */
+.field{margin-bottom:13px;}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:5px;}
+.field input,.field select{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:11px;padding:12px 13px;}
+.field.split{display:flex;gap:10px;}
+.field.split > div{flex:1;}
+.editrow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);}
+.editrow:last-child{border-bottom:none;}
+.editrow .nm{flex:1;font-weight:600;font-size:14.5px;}
+.editrow .nm small{display:block;font-weight:500;color:var(--faint);font-size:11.5px;}
+.editrow .val{font-weight:600;font-variant-numeric:tabular-nums;}
+.editrow .typetag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:6px;}
+.tt-fixed{background:#eceae4;color:#6b675e;}
+.tt-variable{background:var(--brand-soft);color:var(--brand);}
+.tt-sinking{background:var(--amber-soft);color:#8a5d10;}
+.switch{position:relative;width:46px;height:27px;flex-shrink:0;}
+.switch input{display:none;}
+.switch .sl{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:.2s;}
+.switch .sl::after{content:"";position:absolute;width:21px;height:21px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.switch input:checked + .sl{background:var(--safe);}
+.switch input:checked + .sl::after{transform:translateX(19px);}
+
+/* goals */
+.goal{padding:16px 0;border-bottom:1px solid var(--line);}
+.goal:last-child{border-bottom:none;}
+.goal .gh{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.goal .gname{font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:8px;}
+.goal.paused .gname{color:var(--muted);}
+.goal .pct{font-weight:600;font-size:13px;color:var(--brand);}
+.ring{position:relative;}
+.donut{display:flex;align-items:center;gap:14px;margin-top:11px;}
+.goal .note{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.4;background:var(--surface-2);padding:9px 11px;border-radius:10px;}
+.goal .gactions{display:flex;gap:8px;margin-top:11px;}
+.minibtn{font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:10px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);}
+.minibtn.brand{background:var(--brand-soft);color:var(--brand);border-color:transparent;}
+
+/* chart */
+.chartwrap{width:100%;overflow:hidden;}
+svg{display:block;width:100%;}
+.legend{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:12.5px;color:var(--muted);}
+.legend span{display:flex;align-items:center;gap:6px;}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+/* hockey */
+.hkbal{display:flex;gap:12px;}
+.hkbal .b{flex:1;background:var(--surface-2);border-radius:14px;padding:14px;}
+.hkbal .b .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;}
+.hkbal .b .v{font-family:'Fraunces',serif;font-size:24px;font-weight:600;margin-top:5px;}
+
+/* bottom nav */
+nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding:8px 6px calc(8px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 2px;color:var(--faint);font-size:10.5px;font-weight:600;transition:.15s;}
+nav button .ic{font-size:21px;line-height:1;}
+nav button.active{color:var(--brand);}
+.fab{position:fixed;bottom:calc(78px + env(safe-area-inset-bottom));right:max(16px,calc(50% - 260px + 16px));z-index:25;width:58px;height:58px;border-radius:50%;background:var(--brand);color:#fff;font-size:30px;display:grid;place-items:center;box-shadow:0 6px 20px rgba(15,93,78,.4);}
+
+/* misc */
+.empty{text-align:center;color:var(--faint);padding:26px 10px;font-size:14px;}
+.addlink{display:block;width:100%;text-align:center;padding:13px;color:var(--brand);font-weight:600;font-size:14px;border:1.5px dashed var(--brand-soft);border-radius:13px;margin-top:6px;}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(27,26,22,.4);display:none;align-items:flex-end;justify-content:center;}
+.modal.open{display:flex;}
+.sheet{background:var(--paper);width:100%;max-width:520px;border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto;animation:slideup .3s cubic-bezier(.2,.8,.2,1);}
+@keyframes slideup{from{transform:translateY(100%);}to{transform:none;}}
+.sheet h2{font-size:20px;margin-bottom:14px;}
+.sheethandle{width:40px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 16px;}
+.banner{background:var(--brand-soft);border-radius:13px;padding:13px 14px;font-size:13px;color:#0c4a3d;line-height:1.45;margin-bottom:14px;}
+.banner b{font-weight:700;}
+.setupwarn{background:var(--amber-soft);color:#7c5510;border-radius:13px;padding:13px 14px;font-size:13px;line-height:1.45;margin-bottom:14px;}
+.inlinebtns{display:flex;gap:9px;}
+.inlinebtns > *{flex:1;}
+#loginScreen{display:none;position:fixed;inset:0;z-index:100;background:var(--paper);align-items:center;justify-content:center;padding:24px;}
+.logincard{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:26px 22px;width:100%;max-width:380px;}
+.loginsub{text-align:center;color:var(--muted);font-size:14px;margin:0 0 18px;}
+.loginerr{color:var(--red);font-size:13px;min-height:18px;margin-bottom:6px;font-weight:600;}
+.loginnote{font-size:12px;color:var(--faint);line-height:1.4;margin:14px 0 0;text-align:center;}
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <div class="logincard">
+    <div class="brandmark" style="justify-content:center;margin-bottom:6px"><span class="dot"></span><h1 style="font-size:22px">Household</h1></div>
+    <p class="loginsub" id="loginMsg">Checking sign-in&hellip;</p>
+    <div id="loginForm" style="display:none">
+      <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" inputmode="email" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div id="loginError" class="loginerr"></div>
+      <button class="bigbtn" onclick="doLogin()">Sign in</button>
+      <p class="loginnote">Only Chris and Katrina&rsquo;s accounts can sign in. Accounts are created in the Firebase console, not here.</p>
+    </div>
+  </div>
+</div>
+<div id="app">
+  <header>
+    <div class="topline">
+      <div class="brandmark"><span class="dot"></span><h1>Household</h1></div>
+      <div class="monthpill">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span class="m num" id="monthLabel">June 2026</span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="leavebadge" id="leaveBadge"><span>●</span> Leave mode is on. Katrina&rsquo;s income is reduced.</div>
+  </header>
+
+  <!-- HOME -->
+  <section class="screen active" id="screen-home"></section>
+  <!-- LOG -->
+  <section class="screen" id="screen-log"></section>
+  <!-- FUNDS -->
+  <section class="screen" id="screen-funds"></section>
+  <!-- CASH -->
+  <section class="screen" id="screen-cash"></section>
+  <!-- SETUP -->
+  <section class="screen" id="screen-setup"></section>
+
+  <nav>
+    <button data-tab="home" class="active" onclick="go('home')"><span class="ic">◎</span>Home</button>
+    <button data-tab="log" onclick="go('log')"><span class="ic">⊕</span>Log</button>
+    <button data-tab="funds" onclick="go('funds')"><span class="ic">◈</span>Funds</button>
+    <button data-tab="cash" onclick="go('cash')"><span class="ic">◢</span>Cashflow</button>
+    <button data-tab="setup" onclick="go('setup')"><span class="ic">⚙</span>Setup</button>
+  </nav>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="sheet" id="sheetBody"></div>
+</div>
+
+<!-- Firebase (only used if you add your config below) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+/* ============================================================
+   FIREBASE SETUP  (shared real-time sync + private sign-in)
+   ------------------------------------------------------------
+   The app works immediately on a single device with no setup.
+   Paste your Firebase config below to sync between phones AND
+   require a login. With config present, the app shows a sign-in
+   screen and only the accounts you create in the Firebase
+   console (Chris and Katrina) can access the data.
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBpF4rW1EK8GqzvyYwpQBv7U2EcPZ6geXA",
+  authDomain: "household-budget-b0ee3.firebaseapp.com",
+  databaseURL: "https://household-budget-b0ee3-default-rtdb.firebaseio.com",
+  projectId: "household-budget-b0ee3",
+  storageBucket: "household-budget-b0ee3.firebasestorage.app",
+  messagingSenderId: "408171527207",
+  appId: "1:408171527207:web:18ce578ad703ca66342202"
+};
+const DB_PATH = "household_budget";
+
+/* ---------- state ---------- */
+let state = null;
+let fbRef = null;
+let useFirebase = false;
+let suppressSave = false;
+
+/* ui state (not persisted) */
+let ui = {
+  tab:'home',
+  month: currentMonthKey(),
+  logAmount:'',
+  logCat:null,
+  logWho:'shared'
+};
+
+function currentMonthKey(d){ d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function monthName(key){ const [y,m]=key.split('-'); return new Date(y, m-1, 1).toLocaleString('en-US',{month:'long',year:'numeric'}); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function money(n,dp){ dp = dp===undefined?0:dp; const v=Math.round((n||0)*100)/100; return '$'+v.toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp}); }
+function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
+
+/* ---------- seed data (preloaded from the budgeting sheet, all editable) ---------- */
+function seed(){
+  return {
+    settings:{ incomeChris:7600, incomeKatrina:5200, leaveIncomeKatrina:1700, leaveMode:false,
+      chequingStart:6500, payday1:15, payday2:30 },
+    categories:[
+      // fixed bills (auto, checklist)
+      {id:'mortgage',name:'Mortgage',type:'fixed',scope:'shared',amount:5015.51,transfer:false,pauseInLeave:false},
+      {id:'strata',name:'Strata Fees',type:'fixed',scope:'shared',amount:472,transfer:false},
+      {id:'daycare',name:'Daycare',type:'fixed',scope:'shared',amount:1400,transfer:false},
+      {id:'homeins',name:'Home Insurance',type:'fixed',scope:'shared',amount:110,transfer:false},
+      {id:'internet',name:'Internet',type:'fixed',scope:'shared',amount:75,transfer:false},
+      {id:'phones',name:'Cellphones',type:'fixed',scope:'shared',amount:154,transfer:false},
+      {id:'subs',name:'Subscriptions',type:'fixed',scope:'shared',amount:45,transfer:false},
+      {id:'parking',name:'Parking',type:'fixed',scope:'shared',amount:90,transfer:false},
+      {id:'dogins',name:'Dog Insurance',type:'fixed',scope:'shared',amount:185,transfer:false},
+      // savings / transfers (auto, can pause in leave)
+      {id:'rrsp',name:'RRSP (incl. HBP min)',type:'fixed',scope:'shared',amount:116,transfer:true,pauseInLeave:false},
+      {id:'tfsa',name:'TFSA',type:'fixed',scope:'shared',amount:200,transfer:true,pauseInLeave:true},
+      {id:'resp',name:'RESP',type:'fixed',scope:'shared',amount:200,transfer:true,pauseInLeave:true},
+      // variable shared necessities (logged)
+      {id:'groceries',name:'Groceries',type:'variable',scope:'shared',amount:1000},
+      {id:'gas',name:'Gas',type:'variable',scope:'shared',amount:777},
+      {id:'hydro',name:'Hydro & Fortis',type:'variable',scope:'shared',amount:150},
+      {id:'baby',name:'Baby & Diapers',type:'variable',scope:'shared',amount:70},
+      {id:'dogfood',name:'Dog Food',type:'variable',scope:'shared',amount:100},
+      {id:'misc',name:'Miscellaneous',type:'variable',scope:'shared',amount:150,disc:true},
+      // variable shared discretionary
+      {id:'dining',name:'Dining Out',type:'variable',scope:'shared',amount:300,disc:true},
+      // variable personal discretionary
+      {id:'out_c',name:'Outings',type:'variable',scope:'chris',amount:130},
+      {id:'out_k',name:'Outings',type:'variable',scope:'katrina',amount:130},
+      {id:'pcare_k',name:'Personal Care (eyelashes, nails, etc)',type:'variable',scope:'katrina',amount:90},
+      // sinking (accrue + draw, progress trackers)
+      {id:'proptax',name:'Property Tax',type:'sinking',scope:'shared',amount:358,target:4290,saved:1430,due:'Jul 2'},
+      {id:'carins',name:'Car Insurance',type:'sinking',scope:'shared',amount:125,target:3000,saved:750,due:'Annual'},
+      {id:'grooming',name:'Dog Grooming',type:'sinking',scope:'shared',amount:89,target:540,saved:180,due:'Every 8 wks'},
+      {id:'gifts',name:'Gifts (Birthdays / Christmas)',type:'sinking',scope:'shared',amount:83,target:1000,saved:330,due:'Dec',disc:true},
+      {id:'travel',name:'Travel Fund',type:'sinking',scope:'shared',amount:200,target:4000,saved:600,due:'Flexible',disc:true,pauseInLeave:true},
+      {id:'cloth_k',name:'Clothing (Katrina)',type:'sinking',scope:'katrina',amount:83,target:1000,saved:250,due:'Flexible'},
+      {id:'cloth_c',name:'Clothing (Chris)',type:'sinking',scope:'chris',amount:42,target:500,saved:120,due:'Flexible'},
+      {id:'hair_k',name:'Haircut (Katrina)',type:'sinking',scope:'katrina',amount:38,target:450,saved:150,due:'Flexible'}
+    ],
+    goals:[
+      {id:'ef',name:'Emergency Fund',target:20000,saved:20000,active:true,monthly:63,
+        sources:'Seeded from home-sale proceeds, held in the HISA. Car repairs are now paid from this fund, so the $63/mo that used to fund the repairs sinking line flows here to keep it replenished as repairs draw it down.'},
+      {id:'matleave',name:'Mat Leave Buffer',target:12000,saved:0,active:true,monthly:800,
+        sources:'Default funding: pause the Travel Fund and trim TFSA during the dual-income months, plus tax refund and hockey profit. Adjust sources in Setup.'},
+      {id:'reno',name:'Kitchen Reno',target:21300,saved:0,active:false,monthly:0,
+        sources:'Deferred until after the leave and liquidity rebuilds. Reactivate this goal whenever you decide to start saving for it.'}
+    ],
+    fixedStatus:{},      // key `${catId}|${month}` -> true (paid)
+    transactions:[],     // {id,date,month,cat,amount,who,note}
+    income:[],           // {id,date,month,who,amount,note}
+    hockey:{ tx:[] }     // {id,date,type:'in'|'out',amount,note}
+  };
+}
+
+/* ============================================================
+   PERSISTENCE
+   ============================================================ */
+function init(){
+  const hasFb = firebaseConfig.databaseURL && firebaseConfig.apiKey;
+  if(hasFb && window.firebase){
+    try{
+      firebase.initializeApp(firebaseConfig);
+      useFirebase = true;
+      // require sign-in before any data loads
+      document.getElementById('app').style.display='none';
+      document.getElementById('loginScreen').style.display='flex';
+      firebase.auth().onAuthStateChanged(user=>{
+        if(user){ showApp(); attachDb(); }
+        else { showLogin(); }
+      });
+      return;
+    }catch(e){ console.warn('Firebase init failed, using local storage', e); useFirebase=false; }
+  }
+  // local fallback (single device, no login)
+  let saved=null;
+  try{ saved = JSON.parse(localStorage.getItem(DB_PATH)); }catch(e){}
+  state = saved ? migrate(saved) : seed();
+  if(applyDueSchedules()) save();
+  renderAll();
+}
+function attachDb(){
+  if(fbRef) return; // attach the realtime listener once
+  fbRef = firebase.database().ref(DB_PATH);
+  fbRef.on('value', snap=>{
+    const val = snap.val();
+    if(val){ state = migrate(val); }
+    else { state = seed(); pushSave(); }
+    if(applyDueSchedules()) pushSave();
+    renderAll();
+  });
+}
+function showLogin(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('loginMsg').textContent='Sign in to your household budget';
+  document.getElementById('loginForm').style.display='block';
+}
+function showApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+function doLogin(){
+  const email=(document.getElementById('loginEmail').value||'').trim();
+  const pass=document.getElementById('loginPass').value||'';
+  const err=document.getElementById('loginError');
+  err.textContent='';
+  if(!email||!pass){ err.textContent='Enter your email and password.'; return; }
+  firebase.auth().signInWithEmailAndPassword(email,pass)
+    .catch(e=>{ err.textContent='Sign-in failed. Check your email and password.'; });
+}
+function doLogout(){
+  if(useFirebase && firebase.auth){ firebase.auth().signOut().then(()=>{ location.reload(); }); }
+}
+/* scheduled transfers: auto-apply due occurrences to goal balances */
+function startOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+function applyDueSchedules(){
+  let changed=false;
+  const today=startOfDay(new Date());
+  state.goals.forEach(g=>{
+    if(!g.active || !g.schedule || !(g.schedule.amount>0) || !g.schedule.start) return;
+    const sch=g.schedule;
+    const stepDays = sch.freq==='weekly'?7 : sch.freq==='biweekly'?14 : 0;
+    const stepMonth = stepDays?0:1;
+    // cursor = last applied date, or one step before start so the first occurrence is the start date
+    let cursor;
+    if(sch.lastApplied){ cursor=startOfDay(sch.lastApplied); }
+    else {
+      cursor=startOfDay(sch.start);
+      if(stepDays) cursor.setDate(cursor.getDate()-stepDays); else cursor.setMonth(cursor.getMonth()-1);
+    }
+    let appliedAny=false, guard=0;
+    while(guard++<2000){
+      const next=new Date(cursor);
+      if(stepDays) next.setDate(next.getDate()+stepDays); else next.setMonth(next.getMonth()+1);
+      if(next>today) break;
+      g.saved=(g.saved||0)+sch.amount; cursor=next; appliedAny=true; changed=true;
+    }
+    if(appliedAny) sch.lastApplied=cursor.toISOString().slice(0,10);
+  });
+  return changed;
+}
+function migrate(s){
+  // ensure shape
+  const base = seed();
+  s.settings = Object.assign({}, base.settings, s.settings||{});
+  s.categories = s.categories||base.categories;
+  s.goals = s.goals||base.goals;
+  s.fixedStatus = s.fixedStatus||{};
+  s.transactions = s.transactions||[];
+  s.income = s.income||[];
+  s.hockey = s.hockey||{tx:[]};
+  if(!s.hockey.tx) s.hockey.tx=[];
+  return s;
+}
+function save(){
+  if(suppressSave) return;
+  if(useFirebase && fbRef){ pushSave(); }
+  else { try{ localStorage.setItem(DB_PATH, JSON.stringify(state)); }catch(e){} }
+}
+function pushSave(){ try{ fbRef.set(state); }catch(e){ console.warn(e); } }
+function commit(){ save(); renderAll(); }
+
+/* ============================================================
+   CALCULATIONS
+   ============================================================ */
+function income(){
+  const s=state.settings;
+  const k = s.leaveMode ? s.leaveIncomeKatrina : s.incomeKatrina;
+  return (s.incomeChris||0) + (k||0);
+}
+function effAmount(c){ // monthly allocation, respecting leave pause
+  if(state.settings.leaveMode && c.pauseInLeave) return 0;
+  return c.amount||0;
+}
+function catsBy(type){ return state.categories.filter(c=>c.type===type); }
+function spentInMonth(catId,month){
+  return state.transactions.filter(t=>t.cat===catId && t.month===month)
+    .reduce((a,t)=>a+(t.amount||0),0);
+}
+function variableSpent(month){
+  return catsBy('variable').reduce((a,c)=>a+spentInMonth(c.id,month),0);
+}
+function variableBudget(){ return catsBy('variable').reduce((a,c)=>a+effAmount(c),0); }
+function sinkingMonthly(){ return catsBy('sinking').reduce((a,c)=>a+effAmount(c),0); }
+function fixedMonthly(){ return catsBy('fixed').reduce((a,c)=>a+effAmount(c),0); }
+function goalMonthlyEq(g){
+  // monthly-equivalent commitment, on a 2-paycheque-month basis
+  if(g.schedule && g.schedule.amount>0){
+    const f=g.schedule.freq;
+    const a=g.schedule.amount;
+    if(f==='weekly') return a*4;
+    if(f==='biweekly') return a*2;
+    return a; // monthly
+  }
+  return g.monthly||0;
+}
+function goalsMonthly(){ return state.goals.filter(g=>g.active).reduce((a,g)=>a+goalMonthlyEq(g),0); }
+function allocated(){ return fixedMonthly()+variableBudget()+sinkingMonthly()+goalsMonthly(); }
+function unallocated(){ return income()-allocated(); }
+function safeToSpend(month){ return variableBudget()-variableSpent(month); }
+function incomeReceived(month){ return (state.income||[]).filter(e=>e.month===month).reduce((a,e)=>a+(e.amount||0),0); }
+
+function statusClass(spent,budget){
+  if(budget<=0) return 's-ok';
+  const r=spent/budget;
+  if(r>1) return 's-over';
+  if(r>=0.85) return 's-warn';
+  return 's-ok';
+}
+function personRollup(who,month){
+  const cats=state.categories.filter(c=>c.scope===who && (c.type==='variable'||c.type==='sinking'));
+  const budget=cats.reduce((a,c)=>a+effAmount(c),0);
+  const spent=cats.reduce((a,c)=>a+spentInMonth(c.id,month),0);
+  return {budget,spent,cats};
+}
+const BUCKETS={chris:'Chris Discretionary',kat:'Kat Discretionary',shared_disc:'Shared Discretionary',shared_nec:'Shared Necessity',savings:'Savings & Goals'};
+function bucketOf(c){
+  if(c.transfer) return 'savings';
+  if(c.scope==='chris') return 'chris';
+  if(c.scope==='katrina') return 'kat';
+  return c.disc ? 'shared_disc' : 'shared_nec';
+}
+function whoSpentTotal(who,month){
+  return state.transactions.filter(t=>t.month===month && t.who===who).reduce((a,t)=>a+(t.amount||0),0);
+}
+
+/* alerts */
+function buildAlerts(month){
+  const out=[];
+  const un=unallocated();
+  if(un < -1){ out.push({k:'over',ic:'!',t:`You are ${money(Math.abs(un))} over-allocated this month. Trim a category or pause a goal so the budget balances to income.`}); }
+  else if(un > 1){ out.push({k:'info',ic:'i',t:`${money(un)} is unallocated. Assign it to a goal or savings to stay zero-based.`}); }
+  catsBy('variable').forEach(c=>{
+    const sp=spentInMonth(c.id,month), b=effAmount(c);
+    if(b>0 && sp>b){ out.push({k:'over',ic:'!',t:`${c.name} is over by ${money(sp-b)} (${money(sp)} of ${money(b)}).`}); }
+    else if(b>0 && sp>=b*0.85){ out.push({k:'warn',ic:'!',t:`${c.name} is at ${Math.round(sp/b*100)}% (${money(sp)} of ${money(b)}).`}); }
+  });
+  catsBy('sinking').forEach(c=>{
+    if(c.target>0 && c.saved<c.target*0.5 && c.due && /[0-9]/.test(c.due)){
+      out.push({k:'warn',ic:'~',t:`${c.name}: ${money(c.saved)} of ${money(c.target)} set aside, due ${c.due}.`});
+    }
+  });
+  return out;
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function renderAll(){
+  if(!state) return;
+  document.getElementById('monthLabel').textContent = monthName(ui.month);
+  document.getElementById('leaveBadge').classList.toggle('on', !!state.settings.leaveMode);
+  renderHome(); renderLog(); renderFunds(); renderCash(); renderSetup();
+}
+
+function setupBanner(){
+  if(useFirebase) return '';
+  return `<div class="setupwarn"><b>Saving on this device only.</b> To sync with Katrina&rsquo;s phone in real time, add your Firebase config in the file and redeploy. Until then each phone keeps its own copy.</div>`;
+}
+
+function renderHome(){
+  const m=ui.month;
+  const sts=safeToSpend(m);
+  const vb=variableBudget(), vs=variableSpent(m);
+  const un=unallocated();
+  const alerts=buildAlerts(m);
+  const cR=personRollup('chris',m), kR=personRollup('katrina',m);
+
+  let html = setupBanner();
+
+  // hero safe-to-spend
+  html += `<div class="card hero">
+    <div class="lab">Safe to spend ${'\u00b7'} discretionary left</div>
+    <div class="big num">${money(sts)}</div>
+    <div class="sub">${money(vs)} spent of ${money(vb)} variable budget this month</div>
+    <div class="strip">
+      <div class="chip"><div class="k">Income</div><div class="v num">${money(income())}</div></div>
+      <div class="chip"><div class="k">Allocated</div><div class="v num">${money(allocated())}</div></div>
+      <div class="chip"><div class="k">${un<0?'Over':'Unallocated'}</div><div class="v num">${money(Math.abs(un))}</div></div>
+    </div>
+  </div>`;
+
+  // income received this month
+  const rec=incomeReceived(m), exp=income();
+  html += `<div class="card" style="display:flex;align-items:center;gap:14px">
+    <div style="flex:1">
+      <div class="vals" style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700">Income received this month</div>
+      <div class="num" style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;margin-top:3px">${money(rec)}<span style="font-size:14px;color:var(--muted);font-family:'Hanken Grotesk'"> of ~${money(exp)} expected</span></div>
+    </div>
+    <button class="minibtn brand" onclick="logIncome()">+ Paycheque</button>
+  </div>`;
+
+  // alerts
+  if(alerts.length){
+    html += `<div class="sectlabel">Alerts</div>`;
+    alerts.slice(0,5).forEach(a=>{ html+=`<div class="alert ${a.k}"><span class="ic">${a.ic}</span><span>${a.t}</span></div>`; });
+  }
+
+  // per person discretionary
+  html += `<div class="sectlabel">Discretionary spending ${'\u00b7'} by person</div><div class="card"><div class="pp">
+    ${personCard('Chris','chris',cR)}
+    ${personCard('Katrina','katrina',kR)}
+  </div></div>`;
+
+  // variable bars grouped by bucket
+  const vChris = catsBy('variable').filter(c=>c.scope==='chris');
+  const vKat = catsBy('variable').filter(c=>c.scope==='katrina');
+  const vSharedDisc = catsBy('variable').filter(c=>c.scope==='shared' && c.disc);
+  const vSharedNec = catsBy('variable').filter(c=>c.scope==='shared' && !c.disc);
+
+  function bucketCard(title,cats){
+    if(!cats.length) return '';
+    let h=`<div class="sectlabel">${title}</div><div class="card">`;
+    cats.forEach(c=>{ const sp=spentInMonth(c.id,m), b=effAmount(c); h+=progressRow(c.name,c.scope,sp,b); });
+    return h+`</div>`;
+  }
+  html += bucketCard('Chris discretionary',vChris);
+  html += bucketCard('Katrina discretionary',vKat);
+  html += bucketCard('Shared discretionary',vSharedDisc);
+  html += bucketCard('Shared necessities \u00b7 variable',vSharedNec);
+
+  // fixed checklist
+  const fixedBills=catsBy('fixed').filter(c=>!c.transfer);
+  const transfers=catsBy('fixed').filter(c=>c.transfer);
+  html += `<div class="sectlabel">Fixed bills ${'\u00b7'} paid / upcoming</div><div class="card">`;
+  fixedBills.forEach(c=> html+=checkRow(c,m));
+  html += `</div>`;
+  html += `<div class="sectlabel">Savings & transfers (automatic)</div><div class="card">`;
+  transfers.forEach(c=> html+=checkRow(c,m));
+  html += `</div>`;
+
+  document.getElementById('screen-home').innerHTML=html;
+}
+function personCard(name,key,r){
+  const cls=statusClass(r.spent,r.budget);
+  const pct=r.budget>0?clamp(r.spent/r.budget*100,0,100):0;
+  const color=key==='chris'?'var(--chris)':'var(--katrina)';
+  return `<div class="person">
+    <div class="h"><span class="swatch" style="background:${color}"></span>${name}</div>
+    <div class="v num">${money(r.spent)}<small> / ${money(r.budget)}</small></div>
+    <div class="barwrap"><div class="bar ${cls}"><i style="width:${pct}%"></i></div></div>
+  </div>`;
+}
+function progressRow(name,scope,spent,budget){
+  const cls=statusClass(spent,budget);
+  const pct=budget>0?clamp(spent/budget*100,0,100):0;
+  const left=budget-spent;
+  return `<div class="row"><div class="meta">
+    <div class="nm">${name} <span class="who ${scope}">${scope==='shared'?'Shared':scope==='chris'?'Chris':'Katrina'}</span></div>
+    <div class="bar ${cls}"><i style="width:${pct}%"></i></div>
+    <div class="vals num">${money(spent)} of ${money(budget)}</div>
+  </div><div class="amt num">${money(left)}<small>${left<0?'over':'left'}</small></div></div>`;
+}
+function checkRow(c,m){
+  const key=c.id+'|'+m;
+  const done=!!state.fixedStatus[key];
+  return `<div class="check ${done?'done':''}" onclick="toggleFixed('${c.id}')">
+    <div class="box">${done?'\u2713':''}</div>
+    <div class="nm">${c.name}${c.transfer?' <span class="tag">transfer</span>':''}</div>
+    <div class="amt num">${money(effAmount(c))}</div>
+  </div>`;
+}
+function toggleFixed(id){
+  const key=id+'|'+ui.month;
+  if(state.fixedStatus[key]) delete state.fixedStatus[key];
+  else state.fixedStatus[key]=true;
+  commit();
+}
+
+/* ---------- LOG ---------- */
+function renderLog(){
+  const amt=ui.logAmount;
+  const disp = amt? '$'+amt : '$0';
+  let html='';
+  html += `<div class="card"><div class="amountdisplay"><div class="dollar num ${amt?'':'empty'}">${disp}</div></div>
+    <div class="toggle2">
+      <button class="${ui.logWho==='shared'?'sel':''}" onclick="setWho('shared')">Shared</button>
+      <button class="${ui.logWho==='chris'?'sel chris':''}" onclick="setWho('chris')">Chris</button>
+      <button class="${ui.logWho==='katrina'?'sel katrina':''}" onclick="setWho('katrina')">Katrina</button>
+    </div>`;
+
+  // categories: variable + sinking (sinking = drawing the fund down)
+  html += `<div class="catgrid">`;
+  catsBy('variable').forEach(c=>{
+    html += `<button class="${ui.logCat===c.id?'sel':''}" onclick="setCat('${c.id}')"><span class="dot"></span>${c.name}</button>`;
+  });
+  html += `</div>`;
+  html += `<div class="sectlabel" style="margin-left:0">Draw from a sinking fund</div><div class="catgrid">`;
+  catsBy('sinking').forEach(c=>{
+    html += `<button class="${ui.logCat===c.id?'sel':''}" onclick="setCat('${c.id}')"><span class="dot" style="background:var(--amber)"></span>${c.name}</button>`;
+  });
+  html += `</div>`;
+
+  html += `<input class="noteinput" id="logNote" placeholder="Note (optional)" />`;
+
+  // keypad
+  html += `<div class="keypad">`;
+  ['1','2','3','4','5','6','7','8','9','.','0','del'].forEach(k=>{
+    html += `<button onclick="key('${k}')">${k==='del'?'\u232b':k}</button>`;
+  });
+  html += `</div>`;
+  const ready = parseFloat(amt)>0 && ui.logCat;
+  html += `<button class="bigbtn" ${ready?'':'disabled'} onclick="saveTx()">Log it</button>`;
+  html += `</div>`;
+
+  // recent
+  const recent=[...state.transactions].sort((a,b)=>b.date-a.date).slice(0,12);
+  html += `<div class="sectlabel">Recent</div><div class="card">`;
+  if(!recent.length) html += `<div class="empty">No entries yet. Log your first spend above.</div>`;
+  recent.forEach(t=>{
+    const c=state.categories.find(x=>x.id===t.cat);
+    const nm=c?c.name:'(deleted)';
+    const d=new Date(t.date);
+    html += `<div class="tx">
+      <div class="ic">${c&&c.type==='sinking'?'\u25c8':'\u2022'}</div>
+      <div class="meta"><div class="t">${nm}</div><div class="s">${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})} ${'\u00b7'} <span class="who ${t.who}" style="padding:0">${t.who==='shared'?'Shared':t.who==='chris'?'Chris':'Katrina'}</span>${t.note?' '+'\u00b7'+' '+t.note:''}</div></div>
+      <div class="amt num">${money(t.amount,2)}</div>
+      <button class="del" onclick="delTx('${t.id}')">\u00d7</button>
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('screen-log').innerHTML=html;
+}
+function setWho(w){ ui.logWho=w; renderLog(); }
+function setCat(id){ ui.logCat = ui.logCat===id?null:id; renderLog(); }
+function key(k){
+  if(k==='del'){ ui.logAmount=ui.logAmount.slice(0,-1); }
+  else if(k==='.'){ if(!ui.logAmount.includes('.')) ui.logAmount += ui.logAmount?'.':'0.'; }
+  else { if(ui.logAmount.includes('.') && ui.logAmount.split('.')[1].length>=2) return; ui.logAmount+=k; }
+  renderLog();
+}
+function saveTx(){
+  const amount=parseFloat(ui.logAmount);
+  if(!(amount>0)||!ui.logCat) return;
+  const note=(document.getElementById('logNote')||{}).value||'';
+  const c=state.categories.find(x=>x.id===ui.logCat);
+  state.transactions.push({id:uid(),date:Date.now(),month:ui.month,cat:ui.logCat,amount,who:ui.logWho,note});
+  if(c && c.type==='sinking'){ c.saved=Math.max(0,(c.saved||0)-amount); } // draw down the fund
+  ui.logAmount=''; ui.logCat=null;
+  commit();
+}
+function delTx(id){
+  const t=state.transactions.find(x=>x.id===id);
+  if(t){ const c=state.categories.find(x=>x.id===t.cat); if(c&&c.type==='sinking'){ c.saved=(c.saved||0)+t.amount; } }
+  state.transactions=state.transactions.filter(x=>x.id!==id);
+  commit();
+}
+/* ---------- income ledger ---------- */
+function logIncome(){
+  const today=new Date().toISOString().slice(0,10);
+  const recent=[...(state.income||[])].sort((a,b)=>b.date-a.date).slice(0,8);
+  let list='';
+  if(recent.length){
+    list=`<div class="sectlabel" style="margin-left:0">This and recent paycheques</div>`;
+    recent.forEach(e=>{
+      list+=`<div class="tx"><div class="ic">\u2191</div>
+        <div class="meta"><div class="t">${e.who==='chris'?'Chris':e.who==='katrina'?'Katrina':'Other'}${e.note?' \u00b7 '+e.note:''}</div>
+        <div class="s">${new Date(e.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div>
+        <div class="amt num" style="color:var(--safe)">+${money(e.amount,2)}</div>
+        <button class="del" onclick="delIncome('${e.id}')">\u00d7</button></div>`;
+    });
+  }
+  openModal(`<div class="sheethandle"></div><h2>Log a paycheque</h2>
+    <div class="field"><label>Amount received (net)</label><input id="in_amt" type="number" inputmode="decimal" placeholder="0.00"></div>
+    <div class="field"><label>Whose pay</label><select id="in_who">
+      <option value="chris">Chris</option><option value="katrina">Katrina</option><option value="other">Other</option></select></div>
+    <div class="field"><label>Date received</label><input id="in_date" type="date" value="${today}"></div>
+    <div class="field"><label>Note (optional)</label><input id="in_note" placeholder="e.g. OT, stat pay, 3rd cheque"></div>
+    <button class="bigbtn" onclick="confirmIncome()">Add</button>
+    ${list}`);
+  setTimeout(()=>{const el=document.getElementById('in_amt'); if(el)el.focus();},100);
+}
+function confirmIncome(){
+  const amount=parseFloat(document.getElementById('in_amt').value);
+  if(!(amount>0)) return;
+  const dstr=document.getElementById('in_date').value;
+  const d=dstr?new Date(dstr+'T12:00:00'):new Date();
+  state.income=state.income||[];
+  state.income.push({id:uid(),date:d.getTime(),month:currentMonthKey(d),who:document.getElementById('in_who').value,amount,note:document.getElementById('in_note').value||''});
+  closeModal(); commit();
+}
+function delIncome(id){ state.income=(state.income||[]).filter(e=>e.id!==id); commit(); logIncome(); }
+
+/* ---------- FUNDS ---------- */
+function renderFunds(){
+  let html='';
+  // goals
+  html += `<div class="sectlabel">Savings goals</div><div class="card">`;
+  state.goals.forEach(g=> html+=goalBlock(g));
+  html += `<button class="addlink" onclick="editGoal()">+ Add a goal</button></div>`;
+
+  // sinking funds
+  html += `<div class="sectlabel">Sinking funds ${'\u00b7'} set aside for lumpy costs</div><div class="card">`;
+  catsBy('sinking').forEach(c=> html+=sinkingBlock(c));
+  html += `</div>`;
+
+  // contributions action
+  html += `<div class="card"><div class="banner">Run this on payday to top up your sinking funds and any flat-monthly goals. Goals with a scheduled auto-transfer fill themselves on their own schedule, so they are skipped here.</div>
+    <button class="bigbtn ghost" onclick="applyContributions()">Apply monthly contributions</button></div>`;
+
+  // hockey
+  html += `<div class="sectlabel">Hockey league ledger ${'\u00b7'} kept separate</div>`;
+  html += hockeyBlock();
+
+  document.getElementById('screen-funds').innerHTML=html;
+}
+function donut(pct,color){
+  const r=22,c=2*Math.PI*r,off=c*(1-clamp(pct,0,1));
+  return `<svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="7"/><circle cx="28" cy="28" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 28 28)"/><text x="28" y="32" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)" font-family="Hanken Grotesk">${Math.round(pct*100)}</text></svg>`;
+}
+function goalBlock(g){
+  const pct=g.target>0?g.saved/g.target:0;
+  const color=g.active?'var(--brand)':'var(--faint)';
+  const eq=goalMonthlyEq(g);
+  let funding='';
+  if(g.active && g.schedule && g.schedule.amount>0){
+    const f={weekly:'weekly',biweekly:'bi-weekly',monthly:'monthly'}[g.schedule.freq];
+    funding=`<div class="vals num" style="font-size:13px;color:var(--muted)">Auto-transfer ${money(g.schedule.amount)} ${f} (${money(eq)}/mo)</div>`;
+  } else if(g.active && g.monthly>0){
+    funding=`<div class="vals num" style="font-size:13px;color:var(--muted)">Contributing ${money(g.monthly)}/mo</div>`;
+  }
+  return `<div class="goal ${g.active?'':'paused'}">
+    <div class="gh"><div class="gname">${g.name}${g.active?'':' <span class="tag">paused</span>'}</div>
+      <div class="pct">${money(g.saved)} / ${money(g.target)}</div></div>
+    <div class="donut">${donut(pct,color)}
+      <div style="flex:1">
+        ${funding}
+        ${g.active&&eq>0?`<div class="vals num" style="font-size:12.5px;color:var(--faint)">${monthsTo(g,eq)}</div>`:''}
+        <div class="note">${g.sources||''}</div>
+      </div></div>
+    <div class="gactions">
+      <button class="minibtn brand" onclick="addToGoal('${g.id}')">Add funds</button>
+      <button class="minibtn" onclick="editGoal('${g.id}')">Edit</button>
+      <button class="minibtn" onclick="toggleGoal('${g.id}')">${g.active?'Pause':'Activate'}</button>
+    </div>
+  </div>`;
+}
+function monthsTo(g,eq){
+  const rem=g.target-g.saved; if(rem<=0) return 'Funded';
+  if(!eq) return '';
+  const m=Math.ceil(rem/eq);
+  return `~${m} month${m>1?'s':''} to go at this rate`;
+}
+function sinkingBlock(c){
+  const pct=c.target>0?c.saved/c.target:0;
+  return `<div class="row" onclick="editCategory('${c.id}')"><div class="meta">
+    <div class="nm">${c.name} <span class="who ${c.scope}">${c.scope==='shared'?'Shared':c.scope==='chris'?'Chris':'Katrina'}</span></div>
+    <div class="bar s-ok"><i style="width:${clamp(pct*100,0,100)}%"></i></div>
+    <div class="vals num">${money(c.saved)} of ${money(c.target)} ${'\u00b7'} ${money(effAmount(c))}/mo ${'\u00b7'} due ${c.due||'flexible'}</div>
+  </div><div class="amt num">${Math.round(pct*100)}%</div></div>`;
+}
+function applyContributions(){
+  catsBy('sinking').forEach(c=>{ c.saved=(c.saved||0)+effAmount(c); });
+  state.goals.filter(g=>g.active && g.monthly>0 && !(g.schedule&&g.schedule.amount>0)).forEach(g=>{ g.saved=(g.saved||0)+g.monthly; });
+  commit();
+  toast('Contributions applied to funds and goals.');
+}
+function addToGoal(id){
+  const g=state.goals.find(x=>x.id===id);
+  openModal(`<div class="sheethandle"></div><h2>Add funds to ${g.name}</h2>
+    <div class="field"><label>Amount</label><input id="gf_amt" type="number" inputmode="decimal" placeholder="0.00"></div>
+    <button class="bigbtn" onclick="confirmAddGoal('${id}')">Add</button>`);
+  setTimeout(()=>document.getElementById('gf_amt').focus(),100);
+}
+function confirmAddGoal(id){
+  const v=parseFloat(document.getElementById('gf_amt').value);
+  if(v>0){ const g=state.goals.find(x=>x.id===id); g.saved=(g.saved||0)+v; }
+  closeModal(); commit();
+}
+function toggleGoal(id){ const g=state.goals.find(x=>x.id===id); g.active=!g.active; commit(); }
+
+/* ---------- HOCKEY ---------- */
+function hockeyBlock(){
+  const tx=state.hockey.tx;
+  const inn=tx.filter(t=>t.type==='in').reduce((a,t)=>a+t.amount,0);
+  const out=tx.filter(t=>t.type==='out').reduce((a,t)=>a+t.amount,0);
+  const bal=inn-out;
+  let html=`<div class="card"><div class="banner">This pool is excluded from your household safe-to-spend. Most of it is players&rsquo; money in transit; only the season profit is yours.</div>
+    <div class="hkbal">
+      <div class="b"><div class="k">Pool balance</div><div class="v num">${money(bal)}</div></div>
+      <div class="b"><div class="k">Season profit</div><div class="v num" style="color:${bal>=0?'var(--safe)':'var(--red)'}">${money(bal)}</div></div>
+    </div>
+    <div class="inlinebtns" style="margin-top:13px">
+      <button class="minibtn brand" onclick="hockeyAdd('in')">+ Collection in</button>
+      <button class="minibtn" onclick="hockeyAdd('out')">- Ice bill out</button>
+    </div>`;
+  if(tx.length){
+    html+=`<div style="margin-top:8px">`;
+    [...tx].sort((a,b)=>b.date-a.date).slice(0,8).forEach(t=>{
+      html+=`<div class="tx"><div class="ic">${t.type==='in'?'\u2191':'\u2193'}</div>
+        <div class="meta"><div class="t">${t.note||(t.type==='in'?'Collection':'Ice bill')}</div>
+        <div class="s">${new Date(t.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div>
+        <div class="amt num" style="color:${t.type==='in'?'var(--safe)':'var(--red)'}">${t.type==='in'?'+':'-'}${money(t.amount)}</div>
+        <button class="del" onclick="hockeyDel('${t.id}')">\u00d7</button></div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+  return html;
+}
+function hockeyAdd(type){
+  openModal(`<div class="sheethandle"></div><h2>${type==='in'?'Collection in':'Ice bill out'}</h2>
+    <div class="field"><label>Amount</label><input id="hk_amt" type="number" inputmode="decimal" placeholder="0.00"></div>
+    <div class="field"><label>Note</label><input id="hk_note" placeholder="${type==='in'?'e.g. Sept season collection':'e.g. October ice'}"></div>
+    <button class="bigbtn" onclick="hockeyConfirm('${type}')">Save</button>`);
+  setTimeout(()=>document.getElementById('hk_amt').focus(),100);
+}
+function hockeyConfirm(type){
+  const v=parseFloat(document.getElementById('hk_amt').value);
+  const note=document.getElementById('hk_note').value||'';
+  if(v>0){ state.hockey.tx.push({id:uid(),date:Date.now(),type,amount:v,note}); }
+  closeModal(); commit();
+}
+function hockeyDel(id){ state.hockey.tx=state.hockey.tx.filter(t=>t.id!==id); commit(); }
+
+/* ---------- CASHFLOW ---------- */
+function renderCash(){
+  const m=ui.month;
+  let html='';
+  // monthly in/out summary
+  const rec=incomeReceived(m);
+  const inc = rec>0 ? rec : income();
+  const inLabel = rec>0 ? 'In (received)' : 'In (expected)';
+  const out=fixedMonthly()+variableSpent(m)+sinkingMonthly()+goalsMonthly();
+  html += `<div class="sectlabel">This month, money in vs out</div><div class="card">`;
+  html += barChart([
+    {label:'In',value:inc,color:'var(--safe)'},
+    {label:'Out',value:out,color:'var(--brand)'}
+  ]);
+  html += `<div class="alloc" style="margin-top:14px">
+    <div class="b"><div class="k">${inLabel}</div><div class="v num">${money(inc)}</div></div><div class="sep"></div>
+    <div class="b"><div class="k">Out</div><div class="v num">${money(out)}</div></div><div class="sep"></div>
+    <div class="b"><div class="k">Net</div><div class="v num" style="color:${inc-out>=0?'var(--safe)':'var(--red)'}">${money(inc-out)}</div></div>
+  </div></div>`;
+
+  // runway
+  html += `<div class="sectlabel">60-day chequing runway</div><div class="card">`;
+  html += `<div class="vals" style="font-size:13px;color:var(--muted);margin-bottom:6px">Projected balance from your fixed bills and paydays. Set the starting balance in Setup.</div>`;
+  html += runwayChart();
+  html += `</div>`;
+
+  // breakdown by category type
+  html += `<div class="sectlabel">Where the money goes</div><div class="card">`;
+  const segs=[
+    {label:'Fixed bills',value:catsBy('fixed').filter(c=>!c.transfer).reduce((a,c)=>a+effAmount(c),0),color:'#6b675e'},
+    {label:'Savings & transfers',value:catsBy('fixed').filter(c=>c.transfer).reduce((a,c)=>a+effAmount(c),0),color:'#2f6f9e'},
+    {label:'Variable spend',value:variableSpent(m),color:'var(--brand)'},
+    {label:'Sinking funds',value:sinkingMonthly(),color:'var(--amber)'},
+    {label:'Goals',value:goalsMonthly(),color:'var(--katrina)'}
+  ];
+  html += segBar(segs);
+  segs.forEach(s=>{ if(s.value>0) html+=`<div class="row" style="padding:9px 0"><div class="meta"><div class="nm" style="font-size:14px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${s.color};margin-right:7px"></span>${s.label}</div></div><div class="amt num">${money(s.value)}</div></div>`; });
+  html += `</div>`;
+
+  document.getElementById('screen-cash').innerHTML=html;
+}
+function barChart(items){
+  const max=Math.max(...items.map(i=>i.value),1);
+  const W=300,H=150,bw=80,gap=80,base=H-24;
+  let bars='';
+  items.forEach((it,i)=>{
+    const h=(it.value/max)*(base-10);
+    const x=50+i*(bw+gap);
+    bars+=`<rect x="${x}" y="${base-h}" width="${bw}" height="${h}" rx="8" fill="${it.color}"/>
+      <text x="${x+bw/2}" y="${base+16}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="Hanken Grotesk">${it.label}</text>
+      <text x="${x+bw/2}" y="${base-h-7}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)" font-family="Hanken Grotesk">${money(it.value)}</text>`;
+  });
+  return `<div class="chartwrap"><svg viewBox="0 0 ${W} ${H}">${bars}</svg></div>`;
+}
+function segBar(segs){
+  const total=segs.reduce((a,s)=>a+s.value,0)||1;
+  let x=0,rects='';
+  segs.forEach(s=>{ const w=s.value/total*100; rects+=`<rect x="${x}%" y="0" width="${w}%" height="22" fill="${s.color}"/>`; x+=w; });
+  return `<svg viewBox="0 0 100 22" preserveAspectRatio="none" style="height:22px;border-radius:7px;overflow:hidden;margin-bottom:6px">${rects}</svg>`;
+}
+function runwayChart(){
+  const s=state.settings;
+  let bal=s.chequingStart||0;
+  const days=60;
+  const dailyIncome=income();
+  const fixedOut=fixedMonthly()+sinkingMonthly()+goalsMonthly();
+  const varDaily=variableBudget()/30;
+  const pts=[]; let min=bal,max=bal;
+  const today=new Date();
+  for(let d=0; d<=days; d++){
+    const date=new Date(today); date.setDate(today.getDate()+d);
+    const dom=date.getDate();
+    if(dom===s.payday1||dom===s.payday2){ bal+=dailyIncome/2; }
+    if(dom===1){ bal-=fixedOut; }
+    bal-=varDaily;
+    pts.push(bal); if(bal<min)min=bal; if(bal>max)max=bal;
+  }
+  const W=320,H=160,pad=24;
+  const range=(max-min)||1;
+  const xf=i=>pad+(i/days)*(W-pad*2);
+  const yf=v=>pad+(1-(v-min)/range)*(H-pad*2);
+  let path='M '+pts.map((v,i)=>xf(i).toFixed(1)+' '+yf(v).toFixed(1)).join(' L ');
+  const zeroY=yf(0);
+  const showZero = min<0 && max>0;
+  return `<div class="chartwrap"><svg viewBox="0 0 ${W} ${H}">
+    ${showZero?`<line x1="${pad}" y1="${zeroY}" x2="${W-pad}" y2="${zeroY}" stroke="var(--red)" stroke-width="1" stroke-dasharray="3 3"/><text x="${W-pad}" y="${zeroY-4}" text-anchor="end" font-size="10" fill="var(--red)" font-family="Hanken Grotesk">$0</text>`:''}
+    <path d="${path}" fill="none" stroke="var(--brand)" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="${xf(0)}" cy="${yf(pts[0])}" r="3.5" fill="var(--brand)"/>
+    <text x="${pad}" y="${H-4}" font-size="10" fill="var(--muted)" font-family="Hanken Grotesk">Today ${money(pts[0])}</text>
+    <text x="${W-pad}" y="${H-4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="Hanken Grotesk">+60d ${money(pts[days])}</text>
+  </svg></div>`;
+}
+
+/* ---------- SETUP ---------- */
+function renderSetup(){
+  const s=state.settings;
+  let html='';
+  // income
+  html += `<div class="sectlabel">Income (monthly, net)</div><div class="card">
+    <div class="field split">
+      <div><label>Chris</label><input type="number" value="${s.incomeChris}" onchange="setIncome('incomeChris',this.value)"></div>
+      <div><label>Katrina</label><input type="number" value="${s.incomeKatrina}" onchange="setIncome('incomeKatrina',this.value)"></div>
+    </div>
+    <div class="field"><label>Katrina&rsquo;s income during leave (EI ~$1,700)</label><input type="number" value="${s.leaveIncomeKatrina}" onchange="setIncome('leaveIncomeKatrina',this.value)"></div>
+    <div class="editrow"><div class="nm">Leave mode<small>Uses Katrina&rsquo;s reduced income and pauses flagged savings</small></div>
+      <label class="switch"><input type="checkbox" ${s.leaveMode?'checked':''} onchange="toggleLeave()"><span class="sl"></span></label></div>
+  </div>`;
+
+  // allocation summary
+  const un=unallocated();
+  html += `<div class="card"><div class="alloc">
+    <div class="b"><div class="k">Income</div><div class="v num">${money(income())}</div></div><div class="sep"></div>
+    <div class="b"><div class="k">Allocated</div><div class="v num">${money(allocated())}</div></div><div class="sep"></div>
+    <div class="b"><div class="k">${un<0?'Over':'Free'}</div><div class="v num" style="color:${Math.abs(un)<2?'var(--safe)':un<0?'var(--red)':'var(--ink)'}">${money(Math.abs(un))}</div></div>
+  </div></div>`;
+
+  // category management grouped
+  ['fixed','variable','sinking'].forEach(type=>{
+    const label = type==='fixed'?'Fixed & transfers':type==='variable'?'Variable categories':'Sinking funds';
+    html += `<div class="sectlabel">${label}</div><div class="card">`;
+    catsBy(type).forEach(c=>{
+      html += `<div class="editrow" onclick="editCategory('${c.id}')">
+        <span class="typetag tt-${type}">${type}</span>
+        <div class="nm">${c.name}<small>${BUCKETS[bucketOf(c)]}${c.type==='sinking'?' '+'\u00b7'+' target '+money(c.target):''}${c.pauseInLeave?' '+'\u00b7'+' pauses in leave':''}</small></div>
+        <div class="val num">${money(c.amount)}</div>
+      </div>`;
+    });
+    html += `<button class="addlink" onclick="editCategory(null,'${type}')">+ Add ${type} category</button></div>`;
+  });
+
+  // chequing runway settings
+  html += `<div class="sectlabel">Cashflow runway settings</div><div class="card">
+    <div class="field"><label>Current chequing balance</label><input type="number" value="${s.chequingStart}" onchange="setIncome('chequingStart',this.value)"></div>
+    <div class="field split">
+      <div><label>Payday 1 (day of month)</label><input type="number" value="${s.payday1}" onchange="setIncome('payday1',this.value)"></div>
+      <div><label>Payday 2 (day of month)</label><input type="number" value="${s.payday2}" onchange="setIncome('payday2',this.value)"></div>
+    </div></div>`;
+
+  // data
+  const acct = (useFirebase && firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser.email : '';
+  html += `<div class="sectlabel">Data</div><div class="card">
+    <div class="vals" style="font-size:13px;color:var(--muted);margin-bottom:10px">${useFirebase?('Synced in real time via Firebase.'+(acct?' Signed in as '+acct+'.':'')):'Saving on this device only. Add Firebase config in the file to sync and require sign-in.'}</div>
+    <button class="minibtn" onclick="resetAll()">Reset everything to the starting budget</button>
+    ${useFirebase?'<button class="minibtn" style="margin-left:8px" onclick="doLogout()">Sign out</button>':''}
+  </div>`;
+
+  document.getElementById('screen-setup').innerHTML=html;
+}
+function setIncome(k,v){ state.settings[k]=parseFloat(v)||0; commit(); }
+function toggleLeave(){ state.settings.leaveMode=!state.settings.leaveMode; commit(); }
+function resetAll(){ if(confirm('Reset all data to the starting budget? This clears logged transactions.')){ state=seed(); commit(); } }
+
+/* ---------- category editor ---------- */
+function editCategory(id,presetType){
+  const c = id? state.categories.find(x=>x.id===id) : {id:null,name:'',type:presetType||'variable',scope:'shared',amount:0,target:0,due:'Flexible',saved:0,pauseInLeave:false,transfer:false};
+  const isNew=!id;
+  openModal(`<div class="sheethandle"></div><h2>${isNew?'New category':'Edit category'}</h2>
+    <div class="field"><label>Name</label><input id="c_name" value="${c.name}"></div>
+    <div class="field split">
+      <div><label>Type</label><select id="c_type" onchange="catTypeChange()">
+        <option value="fixed" ${c.type==='fixed'?'selected':''}>Fixed</option>
+        <option value="variable" ${c.type==='variable'?'selected':''}>Variable</option>
+        <option value="sinking" ${c.type==='sinking'?'selected':''}>Sinking</option>
+      </select></div>
+      <div><label>Belongs to</label><select id="c_scope">
+        <option value="shared" ${c.scope==='shared'?'selected':''}>Shared</option>
+        <option value="chris" ${c.scope==='chris'?'selected':''}>Chris</option>
+        <option value="katrina" ${c.scope==='katrina'?'selected':''}>Katrina</option>
+      </select></div>
+    </div>
+    <div class="field"><label id="amtLabel">Monthly amount</label><input id="c_amt" type="number" inputmode="decimal" value="${c.amount||''}"></div>
+    <div id="sinkFields" style="display:${c.type==='sinking'?'block':'none'}">
+      <div class="field split">
+        <div><label>Target</label><input id="c_target" type="number" value="${c.target||''}"></div>
+        <div><label>Saved so far</label><input id="c_saved" type="number" value="${c.saved||''}"></div>
+      </div>
+      <div class="field"><label>Due / timing</label><input id="c_due" value="${c.due||'Flexible'}"></div>
+    </div>
+    <div id="transferField" style="display:${c.type==='fixed'?'flex':'none'}" class="editrow"><div class="nm">Savings or transfer<small>RRSP, TFSA, RESP, etc.</small></div>
+      <label class="switch"><input id="c_transfer" type="checkbox" ${c.transfer?'checked':''}><span class="sl"></span></label></div>
+    <div class="editrow"><div class="nm">Discretionary<small>A want, not a necessity. Personal categories are always discretionary.</small></div>
+      <label class="switch"><input id="c_disc" type="checkbox" ${c.disc?'checked':''}><span class="sl"></span></label></div>
+    <div class="editrow"><div class="nm">Pause during leave mode</div>
+      <label class="switch"><input id="c_pause" type="checkbox" ${c.pauseInLeave?'checked':''}><span class="sl"></span></label></div>
+    <button class="bigbtn" onclick="saveCategory('${id||''}')">Save</button>
+    ${!isNew?`<button class="bigbtn ghost" style="margin-top:9px;color:var(--red);border-color:var(--red-soft)" onclick="deleteCategory('${id}')">Delete category</button>`:''}
+  `);
+}
+function catTypeChange(){
+  const t=document.getElementById('c_type').value;
+  document.getElementById('sinkFields').style.display = t==='sinking'?'block':'none';
+  document.getElementById('transferField').style.display = t==='fixed'?'flex':'none';
+  document.getElementById('amtLabel').textContent = t==='sinking'?'Monthly contribution':'Monthly amount';
+}
+function saveCategory(id){
+  const name=document.getElementById('c_name').value.trim(); if(!name) return;
+  const type=document.getElementById('c_type').value;
+  const obj={
+    name, type,
+    scope:document.getElementById('c_scope').value,
+    amount:parseFloat(document.getElementById('c_amt').value)||0,
+    pauseInLeave:document.getElementById('c_pause').checked,
+    disc:document.getElementById('c_disc').checked
+  };
+  if(type==='sinking'){ obj.target=parseFloat(document.getElementById('c_target').value)||0; obj.saved=parseFloat(document.getElementById('c_saved').value)||0; obj.due=document.getElementById('c_due').value||'Flexible'; }
+  if(type==='fixed'){ obj.transfer=document.getElementById('c_transfer').checked; }
+  if(id){ const c=state.categories.find(x=>x.id===id); Object.assign(c,obj); }
+  else { obj.id=uid(); state.categories.push(obj); }
+  closeModal(); commit();
+}
+function deleteCategory(id){ if(confirm('Delete this category? Logged entries stay but show as deleted.')){ state.categories=state.categories.filter(c=>c.id!==id); closeModal(); commit(); } }
+
+/* ---------- goal editor ---------- */
+function editGoal(id){
+  const g = id? state.goals.find(x=>x.id===id) : {id:null,name:'',target:0,saved:0,monthly:0,active:true,sources:''};
+  const isNew=!id;
+  const sch=g.schedule||{amount:0,freq:'biweekly',start:''};
+  openModal(`<div class="sheethandle"></div><h2>${isNew?'New goal':'Edit goal'}</h2>
+    <div class="field"><label>Name</label><input id="g_name" value="${g.name}"></div>
+    <div class="field split">
+      <div><label>Target</label><input id="g_target" type="number" value="${g.target||''}"></div>
+      <div><label>Saved so far</label><input id="g_saved" type="number" value="${g.saved||''}"></div>
+    </div>
+    <div class="sectlabel" style="margin:8px 0 8px">Funding</div>
+    <div class="field"><label>Scheduled auto-transfer</label>
+      <div class="field split" style="margin-bottom:0">
+        <div><input id="g_sch_amt" type="number" inputmode="decimal" placeholder="Amount" value="${sch.amount||''}"></div>
+        <div><select id="g_sch_freq">
+          <option value="weekly" ${sch.freq==='weekly'?'selected':''}>Weekly</option>
+          <option value="biweekly" ${sch.freq==='biweekly'?'selected':''}>Bi-weekly</option>
+          <option value="monthly" ${sch.freq==='monthly'?'selected':''}>Monthly</option>
+        </select></div>
+      </div>
+    </div>
+    <div class="field"><label>Transfer start date</label><input id="g_sch_start" type="date" value="${sch.start||''}"></div>
+    <div class="banner" style="margin-bottom:14px">Set an amount, frequency, and start date to model an automatic transfer (e.g. paycheque to HISA). The app will add it to this goal on schedule. Leave the amount blank to use a flat monthly figure instead.</div>
+    <div class="field"><label>Flat monthly contribution (if no schedule)</label><input id="g_monthly" type="number" value="${g.monthly||''}"></div>
+    <div class="field"><label>Funding note / sources</label><input id="g_sources" value="${(g.sources||'').replace(/"/g,'&quot;')}"></div>
+    <button class="bigbtn" onclick="saveGoal('${id||''}')">Save</button>
+    ${!isNew?`<button class="bigbtn ghost" style="margin-top:9px;color:var(--red);border-color:var(--red-soft)" onclick="deleteGoal('${id}')">Delete goal</button>`:''}
+  `);
+}
+function saveGoal(id){
+  const name=document.getElementById('g_name').value.trim(); if(!name) return;
+  const obj={name,target:parseFloat(document.getElementById('g_target').value)||0,
+    saved:parseFloat(document.getElementById('g_saved').value)||0,
+    monthly:parseFloat(document.getElementById('g_monthly').value)||0,
+    sources:document.getElementById('g_sources').value};
+  const schAmt=parseFloat(document.getElementById('g_sch_amt').value)||0;
+  const schStart=document.getElementById('g_sch_start').value;
+  const existing = id? (state.goals.find(x=>x.id===id)||{}) : {};
+  if(schAmt>0 && schStart){
+    const prev=existing.schedule||{};
+    // keep lastApplied only if amount/freq/start unchanged, else reset so it re-anchors
+    const same = prev.amount===schAmt && prev.freq===document.getElementById('g_sch_freq').value && prev.start===schStart;
+    obj.schedule={amount:schAmt,freq:document.getElementById('g_sch_freq').value,start:schStart,lastApplied: same?prev.lastApplied:null};
+  } else {
+    obj.schedule=null;
+  }
+  if(id){ const g=state.goals.find(x=>x.id===id); Object.assign(g,obj); }
+  else { obj.id=uid(); obj.active=true; state.goals.push(obj); }
+  applyDueSchedules();
+  closeModal(); commit();
+}
+function deleteGoal(id){ if(confirm('Delete this goal?')){ state.goals=state.goals.filter(g=>g.id!==id); closeModal(); commit(); } }
+
+/* ---------- nav / modal / misc ---------- */
+function go(tab){
+  ui.tab=tab;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+tab).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  window.scrollTo(0,0);
+}
+function changeMonth(dir){
+  const [y,m]=ui.month.split('-').map(Number);
+  const d=new Date(y,m-1+dir,1);
+  ui.month=currentMonthKey(d);
+  renderAll();
+}
+function openModal(html){ document.getElementById('sheetBody').innerHTML=html; document.getElementById('modal').classList.add('open'); }
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+function toast(msg){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:600;z-index:60;box-shadow:var(--shadow);opacity:0;transition:.2s';
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>{t.style.opacity='1';t.style.bottom='110px';});
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),250);},1900);
+}
+
+init();
+</script>
+</body>
+</html>
