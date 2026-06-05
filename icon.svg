@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="108" fill="#3d6b47"/>
+  <!-- House as unified shape: roof peak → roof right edge → wall right top → wall right bottom → wall left bottom → wall left top → roof left edge → back to peak -->
+  <path d="M256,68 L440,270 L404,270 L404,452 L108,452 L108,270 L72,270 Z"
+        fill="rgba(255,255,255,0.95)"/>
+  <!-- Dollar sign inside house body, brand green so it reads on white -->
+  <text x="256" y="410"
+        text-anchor="middle"
+        dominant-baseline="auto"
+        font-family="-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif"
+        font-size="172"
+        font-weight="900"
+        fill="#3d6b47">$</text>
+</svg>
