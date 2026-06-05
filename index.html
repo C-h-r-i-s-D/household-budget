@@ -1008,28 +1008,29 @@ function hockeyDel(id){ state.hockey.tx=state.hockey.tx.filter(t=>t.id!==id); co
 function renderCash(){
   const m=ui.month;
   let html='';
-  // monthly in/out summary
-  const rec=incomeReceived(m);
-  const inc = rec>0 ? rec : income();
-  const inLabel = rec>0 ? 'In (received)' : 'In (expected)';
-  const out=fixedMonthly()+variableSpent(m)+sinkingMonthly()+goalsMonthly();
-  html += `<div class="sectlabel">This month, money in vs out</div><div class="card">`;
+  // planned in vs out (the budget). Using actual variable SPENT made Net look like surplus
+  // early in the month; planned-vs-planned keeps it honest and ties to the allocation.
+  const inc=income();
+  const out=allocated();
+  const net=inc-out;
+  html += `<div class="sectlabel">This month, planned in vs out</div><div class="card">`;
   html += barChart([
     {label:'In',value:inc,color:'var(--safe)'},
     {label:'Out',value:out,color:'var(--brand)'}
   ]);
   html += `<div class="alloc" style="margin-top:14px">
-    <div class="b"><div class="k">${inLabel}</div><div class="v num">${money(inc)}</div></div><div class="sep"></div>
-    <div class="b"><div class="k">Out</div><div class="v num">${money(out)}</div></div><div class="sep"></div>
-    <div class="b"><div class="k">Net</div><div class="v num" style="color:${inc-out>=0?'var(--safe)':'var(--red)'}">${money(inc-out)}</div></div>
-  </div></div>`;
+    <div class="b"><div class="k">In (income)</div><div class="v num">${money(inc)}</div></div><div class="sep"></div>
+    <div class="b"><div class="k">Out (allocated)</div><div class="v num">${money(out)}</div></div><div class="sep"></div>
+    <div class="b"><div class="k">${net<-0.5?'Over':'Unassigned'}</div><div class="v num" style="color:${Math.abs(net)<1?'var(--safe)':net<0?'var(--red)':'var(--ink)'}">${money(Math.abs(net))}</div></div>
+  </div>
+  <div class="banner" style="margin-top:12px">This is the plan: income against every dollar allocated (bills, variable budgets, sinking funds, and savings). A zero-based budget aims for about $0 left over, so a balanced month reads near zero here, not a surplus. What you actually spend appears on Home as you log it.</div></div>`;
 
-  // breakdown by category type
+  // breakdown by category type (planned)
   html += `<div class="sectlabel">Where the money goes</div><div class="card">`;
   const segs=[
     {label:'Fixed bills',value:catsBy('fixed').filter(c=>!c.transfer).reduce((a,c)=>a+effAmount(c),0),color:'#6b675e'},
     {label:'Savings & transfers',value:catsBy('fixed').filter(c=>c.transfer).reduce((a,c)=>a+effAmount(c),0),color:'#2f6f9e'},
-    {label:'Variable spend',value:variableSpent(m),color:'var(--brand)'},
+    {label:'Variable budget',value:variableBudget(),color:'var(--brand)'},
     {label:'Sinking funds',value:sinkingMonthly(),color:'var(--amber)'},
     {label:'Goals',value:goalsMonthly(),color:'var(--katrina)'}
   ];
