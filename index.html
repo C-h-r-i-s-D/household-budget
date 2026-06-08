@@ -203,6 +203,13 @@ header{
 .goal .gname{font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:8px;}
 .goal.paused .gname{color:var(--muted);}
 .goal .pct{font-weight:600;font-size:13px;color:var(--brand);}
+.wheelrow{display:flex;justify-content:space-between;gap:6px;}
+.wheel{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 2px;border-radius:14px;cursor:pointer;}
+.wheel.sel{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);}
+.wheel:active{background:var(--surface-2);}
+.wlab{font-size:13px;font-weight:600;color:var(--ink);}
+.wval{font-size:11px;color:var(--muted);}
+.wheelbreak{margin-top:10px;border-top:1px solid var(--line);padding-top:4px;}
 .ring{position:relative;}
 .donut{display:flex;align-items:center;gap:14px;margin-top:11px;}
 .goal .note{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.4;background:var(--surface-2);padding:9px 11px;border-radius:10px;}
@@ -342,7 +349,8 @@ let ui = {
   logWho:'shared',
   logGroup:null,
   logNote:'',
-  logDate:''
+  logDate:'',
+  openWheel:null
 };
 
 function currentMonthKey(d){ d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
@@ -358,7 +366,7 @@ function seed(){
       chequingStart:6500, payday1:15, payday2:30 },
     categories:[
       // fixed bills (auto-ticked by payDay)
-      {id:'mortgage',name:'Mortgage',type:'fixed',scope:'shared',amount:5015.51,transfer:false,payDay:8},
+      {id:'mortgage',name:'Mortgage',type:'fixed',scope:'shared',amount:5015.51,transfer:false,payDay:8,nextWeekday:true},
       {id:'strata',name:'Strata Fees',type:'fixed',scope:'shared',amount:472,transfer:false,payDay:1},
       {id:'daycare',name:'Daycare',type:'fixed',scope:'shared',amount:1400,transfer:false,payDay:1},
       {id:'dogins',name:'Dog Insurance',type:'fixed',scope:'shared',amount:185,transfer:false,payDay:1},
@@ -369,7 +377,7 @@ function seed(){
       {id:'subs',name:'Subscriptions',type:'fixed',scope:'shared',amount:45,transfer:false,payDay:1},
       {id:'carfin',name:'Car Financing',type:'fixed',scope:'shared',amount:0,transfer:false,payDay:1,note:'Dormant. Set to about $325 when you buy the 2nd vehicle (Sept/Oct). The over-budget guard will then prompt you to fund it from other buckets.'},
       // savings / transfers
-      {id:'rrsp',name:'RRSP (incl. HBP min)',type:'fixed',scope:'shared',amount:116,transfer:true,payDay:15},
+      {id:'rrsp',name:'RRSP (HBP repayment)',type:'fixed',scope:'shared',amount:278,transfer:true,payDay:15,note:'Home Buyers Plan repayment: $25k each over 15 years, about $139/mo each ($278 combined). Required, or the year\u2019s amount is added to taxable income.'},
       {id:'resp',name:'RESP',type:'fixed',scope:'shared',amount:50,transfer:true,payDay:15,note:'Reduced to $50 while building the Emergency & Mat Leave Fund. Bump to $100/mo once the fund is fully funded.'},
       {id:'tfsa',name:'TFSA',type:'fixed',scope:'shared',amount:0,transfer:true,payDay:15,pauseInLeave:true,note:'Paused until the Emergency & Mat Leave Fund reaches its target, then resume.'},
       // variable shared necessities
@@ -395,7 +403,7 @@ function seed(){
       {id:'travel',name:'Travel Fund',type:'sinking',scope:'shared',amount:0,target:4000,saved:600,due:'Flexible',disc:true,pauseInLeave:true,note:'Paused while building the Emergency & Mat Leave Fund.'}
     ],
     goals:[
-      {id:'fund',name:'Emergency & Mat Leave Fund',target:32000,saved:20000,active:true,monthly:1387,
+      {id:'fund',name:'Emergency & Mat Leave Fund',target:32000,saved:20000,active:true,monthly:1225,
         sources:'Combined safety net: a $20k emergency base plus a $12k mat-leave top-up, held as one fund in the HISA. Funded by the paused TFSA and Travel contributions, the reduced RESP, and the one-vehicle gas savings, plus windfalls (tax refund, hockey profit, the two bonus paycheques). When it reaches $32k, resume TFSA and Travel and bump RESP back to $100.'},
       {id:'reno',name:'Kitchen Reno',target:21300,saved:0,active:false,monthly:0,
         sources:'Deferred until after the leave and liquidity rebuilds. Reactivate whenever you decide to start saving for it.'},
@@ -538,6 +546,11 @@ function variableSpent(month){
   return catsBy('variable').reduce((a,c)=>a+spentInMonth(c.id,month),0);
 }
 function variableBudget(){ return catsBy('variable').reduce((a,c)=>a+effAmount(c),0); }
+function isWantCat(c){ return c.scope!=='shared' || !!c.disc; }
+function wantsBudget(){ return catsBy('variable').filter(isWantCat).reduce((a,c)=>a+effAmount(c),0); }
+function needsBudget(){ return catsBy('variable').filter(c=>!isWantCat(c)).reduce((a,c)=>a+effAmount(c),0); }
+function wantsSpent(m){ return catsBy('variable').filter(isWantCat).reduce((a,c)=>a+spentInMonth(c.id,m),0); }
+function needsSpent(m){ return catsBy('variable').filter(c=>!isWantCat(c)).reduce((a,c)=>a+spentInMonth(c.id,m),0); }
 function sinkingMonthly(){ return catsBy('sinking').reduce((a,c)=>a+effAmount(c),0); }
 function fixedMonthly(){ return catsBy('fixed').reduce((a,c)=>a+effAmount(c),0); }
 function goalMonthlyEq(g){
@@ -625,34 +638,24 @@ function setupBanner(){
 
 function renderHome(){
   const m=ui.month;
-  const sts=safeToSpend(m);
-  const vb=variableBudget(), vs=variableSpent(m);
+  const wb=wantsBudget(), ws=wantsSpent(m), wantsLeft=wb-ws;
+  const nb=needsBudget(), ns=needsSpent(m), needsLeft=nb-ns;
   const un=unallocated();
   const alerts=buildAlerts(m);
   const cR=personRollup('chris',m), kR=personRollup('katrina',m);
 
   let html = setupBanner();
 
-  // hero safe-to-spend
+  // hero: wants = true discretionary "safe to spend"; needs shown separately
   html += `<div class="card hero">
-    <div class="lab">Safe to spend ${'\u00b7'} discretionary left</div>
-    <div class="big num">${money(sts)}</div>
-    <div class="sub">${money(vs)} spent of ${money(vb)} variable budget this month</div>
+    <div class="lab">Safe to spend ${'\u00b7'} wants left</div>
+    <div class="big num">${money(wantsLeft)}</div>
+    <div class="sub">Wants ${money(ws)} / ${money(wb)} ${'\u00b7'} Needs ${money(ns)} / ${money(nb)}</div>
     <div class="strip">
-      <div class="chip"><div class="k">Income</div><div class="v num">${money(income())}</div></div>
-      <div class="chip"><div class="k">Allocated</div><div class="v num">${money(allocated())}</div></div>
+      <div class="chip"><div class="k">Needs left</div><div class="v num">${money(needsLeft)}</div></div>
+      <div class="chip"><div class="k">Wants left</div><div class="v num">${money(wantsLeft)}</div></div>
       <div class="chip"><div class="k">${un<0?'Over':'Unallocated'}</div><div class="v num">${money(Math.abs(un))}</div></div>
     </div>
-  </div>`;
-
-  // income received this month
-  const rec=incomeReceived(m), exp=income();
-  html += `<div class="card" style="display:flex;align-items:center;gap:14px">
-    <div style="flex:1">
-      <div class="vals" style="font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700">Income received this month</div>
-      <div class="num" style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;margin-top:3px">${money(rec)}<span style="font-size:14px;color:var(--muted);font-family:'Hanken Grotesk'"> of ~${money(exp)} expected</span></div>
-    </div>
-    <button class="minibtn brand" onclick="logIncome()">+ Paycheque</button>
   </div>`;
 
   // alerts
@@ -662,27 +665,43 @@ function renderHome(){
   }
 
   // per person discretionary
-  html += `<div class="sectlabel">Discretionary spending ${'\u00b7'} by person</div><div class="card"><div class="pp">
-    ${personCard('Chris','chris',cR)}
-    ${personCard('Katrina','katrina',kR)}
-  </div></div>`;
-
-  // variable bars grouped by bucket
-  const vChris = catsBy('variable').filter(c=>c.scope==='chris');
-  const vKat = catsBy('variable').filter(c=>c.scope==='katrina');
-  const vSharedDisc = catsBy('variable').filter(c=>c.scope==='shared' && c.disc);
-  const vSharedNec = catsBy('variable').filter(c=>c.scope==='shared' && !c.disc);
-
-  function bucketCard(title,cats){
-    if(!cats.length) return '';
-    let h=`<div class="sectlabel">${title}</div><div class="card">`;
-    cats.forEach(c=>{ const sp=spentInMonth(c.id,m), b=effAmount(c); h+=progressRow(c,sp,b); });
-    return h+`</div>`;
+  // discretionary: three progress wheels (Chris, Katrina, Shared); tap for the breakdown
+  const wheelGroups=[
+    {key:'chris',label:'Chris',color:'var(--chris)'},
+    {key:'katrina',label:'Katrina',color:'var(--katrina)'},
+    {key:'shared',label:'Shared',color:'var(--brand)'}
+  ];
+  html += `<div class="sectlabel">Discretionary ${'\u00b7'} tap a wheel for the breakdown</div><div class="card"><div class="wheelrow">`;
+  wheelGroups.forEach(g=>{
+    const cats=discGroupCats(g.key);
+    const b=cats.reduce((a,c)=>a+effAmount(c),0);
+    const sp=cats.reduce((a,c)=>a+spentInMonth(c.id,m),0);
+    const pct=b>0?sp/b:0;
+    const col = pct>1.001?'var(--red)':(pct>0.85?'var(--amber)':g.color);
+    const sel=ui.openWheel===g.key;
+    html += `<div class="wheel ${sel?'sel':''}" onclick="toggleWheel('${g.key}')">
+      ${donut(pct,col,82)}
+      <div class="wlab">${g.label}</div>
+      <div class="wval num">${money(sp)} / ${money(b)}</div>
+    </div>`;
+  });
+  html += `</div>`;
+  if(ui.openWheel){
+    const cats=discGroupCats(ui.openWheel);
+    html += `<div class="wheelbreak">`;
+    if(!cats.length) html += `<div class="empty">No categories here yet.</div>`;
+    cats.forEach(c=>{ const sp=spentInMonth(c.id,m), b=effAmount(c); html+=progressRow(c,sp,b); });
+    html += `</div>`;
   }
-  html += bucketCard('Chris discretionary',vChris);
-  html += bucketCard('Katrina discretionary',vKat);
-  html += bucketCard('Shared discretionary',vSharedDisc);
-  html += bucketCard('Shared necessities \u00b7 variable',vSharedNec);
+  html += `</div>`;
+
+  // shared necessities (variable) bars
+  const vSharedNec = catsBy('variable').filter(c=>c.scope==='shared' && !c.disc);
+  if(vSharedNec.length){
+    html += `<div class="sectlabel">Shared necessities ${'\u00b7'} variable</div><div class="card">`;
+    vSharedNec.forEach(c=>{ const sp=spentInMonth(c.id,m), b=effAmount(c); html+=progressRow(c,sp,b); });
+    html += `</div>`;
+  }
 
   // fixed checklist (auto-ticks by payment day; dormant $0 items hidden)
   const fixedBills=catsBy('fixed').filter(c=>!c.transfer && effAmount(c)>0);
@@ -696,6 +715,11 @@ function renderHome(){
 
   document.getElementById('screen-home').innerHTML=html;
 }
+function discGroupCats(key){
+  if(key==='shared') return catsBy('variable').filter(c=>c.scope==='shared' && c.disc);
+  return catsBy('variable').filter(c=>c.scope===key);
+}
+function toggleWheel(key){ ui.openWheel = ui.openWheel===key ? null : key; renderHome(); }
 function personCard(name,key,r){
   const cls=statusClass(r.spent,r.budget);
   const pct=r.budget>0?clamp(r.spent/r.budget*100,0,100):0;
@@ -724,15 +748,29 @@ function monthRel(m){
   const parts=String(m).split('-'); const mm=(parseInt(parts[0])||now.getFullYear())*12+((parseInt(parts[1])||1)-1);
   return mm<cur?-1:(mm>cur?1:0);
 }
+function effectivePayDay(c,year,monthIndex){
+  let day=c.payDay||1;
+  if(!c.nextWeekday) return day;
+  const d=new Date(year,monthIndex,day);
+  const dow=d.getDay();
+  if(dow===6) d.setDate(d.getDate()+2);      // Saturday -> Monday
+  else if(dow===0) d.setDate(d.getDate()+1); // Sunday -> Monday
+  if(d.getMonth()!==monthIndex) return day;  // rolled out of month, keep original
+  return d.getDate();
+}
 function isAutoPaid(c,m){
   const rel=monthRel(m);
   if(rel<0) return true;
   if(rel>0) return false;
-  return new Date().getDate() >= (c.payDay||1);
+  const parts=String(m).split('-'); const y=parseInt(parts[0]), mo=parseInt(parts[1])-1;
+  return new Date().getDate() >= effectivePayDay(c,y,mo);
 }
 function checkRow(c,m){
   const done=isAutoPaid(c,m);
-  const dayTag = c.payDay?`<span class="tag">day ${c.payDay}</span>`:'';
+  const now=new Date();
+  const eff = c.payDay ? effectivePayDay(c, now.getFullYear(), now.getMonth()) : 0;
+  const shifted = c.nextWeekday && eff!==c.payDay;
+  const dayTag = c.payDay?`<span class="tag">day ${c.payDay}${shifted?' \u2192 '+eff:''}</span>`:'';
   return `<div class="check ${done?'done':''}">
     <div class="box">${done?'\u2713':''}</div>
     <div class="nm">${c.name}${c.transfer?' <span class="tag">transfer</span>':''} ${dayTag}</div>
@@ -1107,6 +1145,16 @@ function renderSetup(){
       <label class="switch"><input type="checkbox" ${s.leaveMode?'checked':''} onchange="toggleLeave()"><span class="sl"></span></label></div>
   </div>`;
 
+  // income received this month (moved here from Home)
+  const rec=incomeReceived(ui.month), exp=income();
+  html += `<div class="sectlabel">Income received this month</div><div class="card">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="flex:1"><div class="num" style="font-family:'Fraunces',serif;font-size:24px;font-weight:600">${money(rec)}<span style="font-size:13px;color:var(--muted);font-family:'Hanken Grotesk'"> of ~${money(exp)} expected</span></div></div>
+      <button class="minibtn brand" onclick="logIncome()">+ Paycheque</button>
+    </div>
+    <div class="vals" style="font-size:12px;color:var(--faint);margin-top:8px">Log each paycheque as it lands so the actual-versus-expected view stays accurate, including OT, stat pay, and your two bonus cheques.</div>
+  </div>`;
+
   // allocation summary
   const un=unallocated();
   html += `<div class="card"><div class="alloc">
@@ -1147,6 +1195,10 @@ function resetAll(){ if(confirm('Reset all data to the starting budget? This cle
 function editCategory(id,presetType){
   const c = id? state.categories.find(x=>x.id===id) : {id:null,name:'',type:presetType||'variable',scope:'shared',amount:0,target:0,due:'',dueDate:'',saved:0,pauseInLeave:false,transfer:false,note:'',breakdown:''};
   const isNew=!id;
+  // payment-date picker default: use stored payDate, else build one in the current month from payDay
+  let payDateDefault='';
+  if(c.payDate){ payDateDefault=c.payDate; }
+  else if(c.payDay){ const n=new Date(); payDateDefault=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(Math.min(28,c.payDay)).padStart(2,'0'); }
   openModal(`<div class="sheethandle"></div><h2>${isNew?'New category':'Edit category'}</h2>
     <div class="field"><label>Name</label><input id="c_name" value="${(c.name||'').replace(/"/g,'&quot;')}"></div>
     <div class="field split">
@@ -1171,7 +1223,9 @@ function editCategory(id,presetType){
       <div class="field"><label>Or timing label (for recurring, e.g. Every 8 wks)</label><input id="c_due" value="${(c.due||'').replace(/"/g,'&quot;')}"></div>
       <div class="banner" style="margin-bottom:12px">Set a target and a due date and the monthly contribution is filled in for you (remaining divided by months until due). Edit it freely afterward, especially for recurring bills.</div>
     </div>
-    <div id="payField" class="field" style="display:${c.type==='fixed'?'block':'none'}"><label>Payment day of month (auto-ticks once passed)</label><input id="c_payDay" type="number" min="1" max="31" value="${c.payDay||''}"></div>
+    <div id="payField" class="field" style="display:${c.type==='fixed'?'block':'none'}"><label>Payment date (auto-ticks once the day passes each month)</label><input id="c_payDate" type="date" value="${payDateDefault}"></div>
+    <div id="weekdayField" class="editrow" style="display:${c.type==='fixed'?'flex':'none'}"><div class="nm">Shift to next weekday<small>If the payment day lands on a weekend, tick on the following Monday (e.g. mortgages).</small></div>
+      <label class="switch"><input id="c_nextwd" type="checkbox" ${c.nextWeekday?'checked':''}><span class="sl"></span></label></div>
     <div id="transferField" style="display:${c.type==='fixed'?'flex':'none'}" class="editrow"><div class="nm">Savings or transfer<small>RRSP, TFSA, RESP, etc.</small></div>
       <label class="switch"><input id="c_transfer" type="checkbox" ${c.transfer?'checked':''}><span class="sl"></span></label></div>
     <div class="editrow"><div class="nm">Discretionary<small>A want, not a necessity. Personal categories are always discretionary.</small></div>
@@ -1189,6 +1243,7 @@ function catTypeChange(){
   document.getElementById('sinkFields').style.display = t==='sinking'?'block':'none';
   document.getElementById('transferField').style.display = t==='fixed'?'flex':'none';
   document.getElementById('payField').style.display = t==='fixed'?'block':'none';
+  document.getElementById('weekdayField').style.display = t==='fixed'?'flex':'none';
   document.getElementById('amtLabel').textContent = t==='sinking'?'Monthly contribution':'Monthly amount';
 }
 function monthsUntil(iso){
@@ -1226,7 +1281,13 @@ function saveCategory(id){
     note:document.getElementById('c_note').value.trim()
   };
   if(type==='sinking'){ obj.target=parseFloat(document.getElementById('c_target').value)||0; obj.saved=parseFloat(document.getElementById('c_saved').value)||0; obj.due=document.getElementById('c_due').value.trim(); obj.dueDate=document.getElementById('c_dueDate').value; }
-  if(type==='fixed'){ obj.transfer=document.getElementById('c_transfer').checked; obj.payDay=parseInt(document.getElementById('c_payDay').value)||1; }
+  if(type==='fixed'){
+    obj.transfer=document.getElementById('c_transfer').checked;
+    obj.nextWeekday=document.getElementById('c_nextwd').checked;
+    const pd=document.getElementById('c_payDate').value;
+    if(pd){ obj.payDate=pd; obj.payDay=new Date(pd+'T12:00:00').getDate(); }
+    else { obj.payDay=1; }
+  }
   // over-budget guard
   const prospective = allocatedWith(id, obj);
   const inc = income();
