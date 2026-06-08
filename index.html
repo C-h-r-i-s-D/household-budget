@@ -388,7 +388,7 @@ function seed(){
       {id:'baby',name:'Baby & Diapers',type:'variable',scope:'shared',amount:70},
       // variable shared discretionary
       {id:'dining',name:'Dining Out',type:'variable',scope:'shared',amount:400,disc:true},
-      {id:'household',name:'Household',type:'variable',scope:'shared',amount:50,disc:true,breakdown:'Shared one-off household buys: a rug, a lamp, small home items.'},
+      {id:'household',name:'Miscellaneous',type:'variable',scope:'shared',amount:50,disc:true,breakdown:'Shared one-off household buys: a rug, a lamp, small home items.'},
       // variable personal discretionary
       {id:'out_c',name:'Outings',type:'variable',scope:'chris',amount:130},
       {id:'misc_c',name:'Miscellaneous',type:'variable',scope:'chris',amount:92,breakdown:'Ballpark: about $50 general, $42 clothing. Logged as one bucket.'},
@@ -780,11 +780,14 @@ function checkRow(c,m){
 
 /* ---------- LOG ---------- */
 function logTargets(){
-  const shared = catsBy('variable').filter(c=>c.scope==='shared');
-  const personal = catsBy('variable').filter(c=>c.scope==='chris'||c.scope==='katrina');
   const groups={};
-  personal.forEach(c=>{ const g=(groups[c.name]=groups[c.name]||{name:c.name,byWho:{}}); g.byWho[c.scope]=c.id; });
-  return {shared, groups:Object.values(groups)};
+  catsBy('variable').forEach(c=>{ const g=(groups[c.name]=groups[c.name]||{name:c.name,byWho:{}}); g.byWho[c.scope]=c.id; });
+  const simple=[], grouped=[];
+  Object.values(groups).forEach(g=>{
+    const whos=Object.keys(g.byWho);
+    if(whos.length===1 && whos[0]==='shared') simple.push(g); else grouped.push(g);
+  });
+  return {simple, grouped};
 }
 function captureLog(){
   const a=document.getElementById('logAmt'); if(a) ui.logAmount=a.value;
@@ -792,23 +795,24 @@ function captureLog(){
   const d=document.getElementById('logDate'); if(d) ui.logDate=d.value;
 }
 function renderLog(){
-  const {shared, groups}=logTargets();
+  const {simple, grouped}=logTargets();
   const today=new Date().toISOString().slice(0,10);
   let html='<div class="card">';
   html += `<div class="sectlabel" style="margin-left:0">What did you spend on?</div><div class="catgrid">`;
-  shared.forEach(c=>{ const sel=ui.logCat===c.id&&!ui.logGroup; html+=`<button class="${sel?'sel':''}" onclick="pickShared('${c.id}')"><span class="dot"></span>${c.name}</button>`; });
-  groups.forEach(g=>{ const sel=ui.logGroup===g.name; const nm=g.name.replace(/'/g,"\\'"); html+=`<button class="${sel?'sel':''}" onclick="pickGroup('${nm}')"><span class="dot" style="background:var(--chris)"></span>${g.name} <small style="opacity:.55">personal</small></button>`; });
+  simple.forEach(g=>{ const id=g.byWho.shared; const sel=ui.logCat===id&&!ui.logGroup; html+=`<button class="${sel?'sel':''}" onclick="pickShared('${id}')"><span class="dot"></span>${g.name}</button>`; });
+  grouped.forEach(g=>{ const sel=ui.logGroup===g.name; const nm=g.name.replace(/'/g,"\\'"); html+=`<button class="${sel?'sel':''}" onclick="pickGroup('${nm}')"><span class="dot" style="background:var(--chris)"></span>${g.name}</button>`; });
   html += `</div>`;
   html += `<div class="sectlabel" style="margin-left:0">Draw from a sinking fund</div><div class="catgrid">`;
   catsBy('sinking').forEach(c=>{ const sel=ui.logCat===c.id&&!ui.logGroup; html+=`<button class="${sel?'sel':''}" onclick="pickShared('${c.id}')"><span class="dot" style="background:var(--amber)"></span>${c.name}</button>`; });
   html += `</div>`;
 
   if(ui.logGroup){
-    const g=groups.find(x=>x.name===ui.logGroup);
+    const g=grouped.find(x=>x.name===ui.logGroup);
     if(g){
-      const whos=Object.keys(g.byWho);
+      const order=['chris','katrina','shared'];
+      const whos=order.filter(w=>g.byWho[w]);
       html += `<div class="sectlabel" style="margin-left:0">Whose ${g.name}?</div><div class="toggle2">`;
-      whos.forEach(w=>{ html+=`<button class="${ui.logWho===w&&ui.logCat===g.byWho[w]?('sel '+w):''}" onclick="pickWho('${w}')">${w==='chris'?'Chris':'Katrina'}</button>`; });
+      whos.forEach(w=>{ const lbl=w==='chris'?'Chris':w==='katrina'?'Katrina':'Shared'; html+=`<button class="${ui.logWho===w&&ui.logCat===g.byWho[w]?('sel '+w):''}" onclick="pickWho('${w}')">${lbl}</button>`; });
       html += `</div>`;
     }
   }
@@ -840,7 +844,7 @@ function renderLog(){
 function pickShared(id){ captureLog(); ui.logCat = (ui.logCat===id&&!ui.logGroup)?null:id; ui.logGroup=null; ui.logWho='shared'; renderLog(); }
 function pickGroup(name){
   captureLog();
-  const g=logTargets().groups.find(x=>x.name===name);
+  const g=logTargets().grouped.find(x=>x.name===name);
   if(!g) return;
   const whos=Object.keys(g.byWho);
   if(ui.logGroup===name){ ui.logGroup=null; ui.logCat=null; renderLog(); return; }
@@ -849,7 +853,7 @@ function pickGroup(name){
   else { ui.logCat=null; ui.logWho=null; }
   renderLog();
 }
-function pickWho(w){ captureLog(); const g=logTargets().groups.find(x=>x.name===ui.logGroup); if(!g) return; ui.logWho=w; ui.logCat=g.byWho[w]; renderLog(); }
+function pickWho(w){ captureLog(); const g=logTargets().grouped.find(x=>x.name===ui.logGroup); if(!g) return; ui.logWho=w; ui.logCat=g.byWho[w]; renderLog(); }
 function saveTx(){
   captureLog();
   const amount=parseFloat(ui.logAmount);
