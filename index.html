@@ -37,6 +37,28 @@
   --shadow:0 1px 2px rgba(27,26,22,.05),0 8px 24px rgba(27,26,22,.06);
   --radius:18px;
 }
+[data-theme="dark"]{
+  --paper:#0d0d0f;
+  --surface:#1f2125;
+  --surface-2:#2a2d32;
+  --ink:#f4f5f7;
+  --muted:#b6b9c0;
+  --faint:#83868d;
+  --line:#3a3d43;
+  --brand:#4cba9c;
+  --brand-soft:#1c3a33;
+  --safe:#43c694;
+  --safe-soft:#163127;
+  --amber:#e0a93f;
+  --amber-soft:#3a2f19;
+  --red:#e0654d;
+  --red-soft:#3a231c;
+  --chris:#6aa6d8;
+  --chris-soft:#1f3340;
+  --katrina:#cd8cb3;
+  --katrina-soft:#3a2b35;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.45);
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
 body{
@@ -50,7 +72,8 @@ body{
 .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
 h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;margin:0;letter-spacing:-.01em;}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
-input,select{font-family:inherit;font-size:16px;}
+input,select,textarea{font-family:inherit;font-size:16px;color:var(--ink);}
+[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{color-scheme:dark;}
 
 /* App shell */
 #app{max-width:520px;margin:0 auto;min-height:100vh;position:relative;}
@@ -131,6 +154,10 @@ header{
 .alert.warn{background:var(--amber-soft);color:#7c5510;}
 .alert.over{background:var(--red-soft);color:#8a2f1d;}
 .alert.info{background:var(--brand-soft);color:#0c4a3d;}
+[data-theme="dark"] .alert.warn{background:#4a3912;color:#f7d083;}
+[data-theme="dark"] .alert.over{background:#4a271d;color:#f6ab95;}
+[data-theme="dark"] .alert.info{background:#173b31;color:#77d9bd;}
+[data-theme="dark"] .alert .ic{color:inherit;}
 
 /* per person */
 .pp{display:flex;gap:12px;}
@@ -314,6 +341,7 @@ nav button.active{color:var(--brand);}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
+try{ var _ht=localStorage.getItem('hb_theme'); document.documentElement.setAttribute('data-theme', _ht||'light'); }catch(e){}
 /* ============================================================
    FIREBASE SETUP  (shared real-time sync + private sign-in)
    ------------------------------------------------------------
@@ -363,7 +391,7 @@ function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
 function seed(){
   return {
     settings:{ incomeChris:7600, incomeKatrina:5200, leaveIncomeKatrina:1700, leaveMode:false,
-      chequingStart:6500, payday1:15, payday2:30 },
+      chequingStart:6500, payday1:15, payday2:30, darkMode:false },
     categories:[
       // fixed bills (auto-ticked by payDay)
       {id:'mortgage',name:'Mortgage',type:'fixed',scope:'shared',amount:5015.51,transfer:false,payDay:8,nextWeekday:true},
@@ -626,10 +654,17 @@ function dueDateLabel(iso){
    ============================================================ */
 function renderAll(){
   if(!state) return;
+  applyTheme();
   document.getElementById('monthLabel').textContent = monthName(ui.month);
   document.getElementById('leaveBadge').classList.toggle('on', !!state.settings.leaveMode);
   renderHome(); renderLog(); renderFunds(); renderCash(); renderSetup();
 }
+function applyTheme(){
+  const t=(state.settings&&state.settings.darkMode)?'dark':'light';
+  document.documentElement.setAttribute('data-theme', t);
+  try{ localStorage.setItem('hb_theme', t); }catch(e){}
+}
+function toggleTheme(){ state.settings.darkMode=!state.settings.darkMode; commit(); }
 
 function setupBanner(){
   if(useFirebase) return '';
@@ -667,9 +702,9 @@ function renderHome(){
   // per person discretionary
   // discretionary: three progress wheels (Chris, Katrina, Shared); tap for the breakdown
   const wheelGroups=[
-    {key:'chris',label:'Chris',color:'var(--chris)'},
-    {key:'katrina',label:'Katrina',color:'var(--katrina)'},
-    {key:'shared',label:'Shared',color:'var(--brand)'}
+    {key:'chris',label:'Chris',color:'var(--chris)',track:'var(--chris-soft)'},
+    {key:'katrina',label:'Katrina',color:'var(--katrina)',track:'var(--katrina-soft)'},
+    {key:'shared',label:'Shared',color:'var(--brand)',track:'var(--brand-soft)'}
   ];
   html += `<div class="sectlabel">Discretionary ${'\u00b7'} tap a wheel for the breakdown</div><div class="card"><div class="wheelrow">`;
   wheelGroups.forEach(g=>{
@@ -680,7 +715,7 @@ function renderHome(){
     const col = pct>1.001?'var(--red)':(pct>0.85?'var(--amber)':g.color);
     const sel=ui.openWheel===g.key;
     html += `<div class="wheel ${sel?'sel':''}" onclick="toggleWheel('${g.key}')">
-      ${donut(pct,col,82)}
+      ${donut(pct,col,82,g.track)}
       <div class="wlab">${g.label}</div>
       <div class="wval num">${money(sp)} / ${money(b)}</div>
     </div>`;
@@ -712,6 +747,12 @@ function renderHome(){
   html += `<div class="sectlabel">Savings & transfers (automatic)</div><div class="card">`;
   transfers.forEach(c=> html+=checkRow(c,m));
   html += `</div>`;
+
+  // appearance
+  html += `<div class="sectlabel">Appearance</div><div class="card">
+    <div class="editrow" style="border:none;padding:2px 0"><div class="nm">Dark mode</div>
+      <label class="switch"><input type="checkbox" ${state.settings.darkMode?'checked':''} onchange="toggleTheme()"><span class="sl"></span></label></div>
+  </div>`;
 
   document.getElementById('screen-home').innerHTML=html;
 }
@@ -932,11 +973,12 @@ function renderFunds(){
 
   document.getElementById('screen-funds').innerHTML=html;
 }
-function donut(pct,color,size){
+function donut(pct,color,size,trackColor){
   size=size||72; const sw=Math.round(size*0.12); const r=(size-sw)/2-1; const cx=size/2;
   const c=2*Math.PI*r, off=c*(1-clamp(pct,0,1));
   const fs=Math.round(size*0.24);
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex:none"><circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="${sw}"/><circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${cx} ${cx})"/><text x="${cx}" y="${cx+fs*0.35}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--ink)" font-family="Hanken Grotesk">${Math.round(pct*100)}</text></svg>`;
+  const track=trackColor||'var(--surface-2)';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex:none"><circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${track}" stroke-width="${sw}"/><circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${cx} ${cx})"/><text x="${cx}" y="${cx+fs*0.35}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--ink)" font-family="Hanken Grotesk">${Math.round(pct*100)}</text></svg>`;
 }
 function goalBlock(g){
   const pct=g.target>0?g.saved/g.target:0;
