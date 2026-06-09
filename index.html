@@ -274,6 +274,8 @@ nav button.active{color:var(--brand);}
 .sheet h2{font-size:20px;margin-bottom:14px;}
 .sheethandle{width:40px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 16px;}
 .banner{background:var(--brand-soft);border-radius:13px;padding:13px 14px;font-size:13px;color:#0c4a3d;line-height:1.45;margin-bottom:14px;}
+[data-theme="dark"] .banner{background:#173b31;color:#9fe6cf;}
+[data-theme="dark"] .goal .note{color:var(--muted);}
 .banner b{font-weight:700;}
 .setupwarn{background:var(--amber-soft);color:#7c5510;border-radius:13px;padding:13px 14px;font-size:13px;line-height:1.45;margin-bottom:14px;}
 .inlinebtns{display:flex;gap:9px;}
@@ -978,28 +980,30 @@ function donut(pct,color,size,trackColor){
   const c=2*Math.PI*r, off=c*(1-clamp(pct,0,1));
   const fs=Math.round(size*0.24);
   const track=trackColor||'var(--surface-2)';
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex:none"><circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${track}" stroke-width="${sw}"/><circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${cx} ${cx})"/><text x="${cx}" y="${cx+fs*0.35}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--ink)" font-family="Hanken Grotesk">${Math.round(pct*100)}</text></svg>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="flex:none"><circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${track}" stroke-width="${sw}"/><circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${cx} ${cx})"/><text x="${cx}" y="${cx+fs*0.35}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="var(--ink)" font-family="Hanken Grotesk">${Math.round(pct*100)}%</text></svg>`;
 }
 function goalBlock(g){
   const pct=g.target>0?g.saved/g.target:0;
   const color=g.active?'var(--brand)':'var(--faint)';
+  const track=g.active?'var(--brand-soft)':'var(--surface-2)';
   const eq=goalMonthlyEq(g);
   let funding='';
   if(g.active && g.schedule && g.schedule.amount>0){
     const f={weekly:'weekly',biweekly:'bi-weekly',monthly:'monthly'}[g.schedule.freq];
-    funding=`<div class="vals num" style="font-size:13.5px;color:var(--muted);font-weight:600">Auto-transfer ${money(g.schedule.amount)} ${f} (${money(eq)}/mo)</div>`;
+    funding=`Auto-transfer ${money(g.schedule.amount)} ${f} (${money(eq)}/mo)`;
   } else if(g.active && g.monthly>0){
-    funding=`<div class="vals num" style="font-size:13.5px;color:var(--muted);font-weight:600">Contributing ${money(g.monthly)}/mo</div>`;
+    funding=`Contributing ${money(g.monthly)}/mo`;
   }
+  const monthsLine = (g.active && eq>0) ? monthsTo(g,eq) : '';
   return `<div class="goal ${g.active?'':'paused'}">
-    <div class="gh"><div class="gname">${g.name}${g.active?'':' <span class="tag">paused</span>'}</div>
-      <div class="pct">${money(g.saved)} / ${money(g.target)}</div></div>
-    <div class="donut">${donut(pct,color,78)}
-      <div style="flex:1;min-width:0">
-        ${funding}
-        ${g.active&&eq>0?`<div class="vals num" style="font-size:12.5px;color:var(--faint);margin-top:2px">${monthsTo(g,eq)}</div>`:''}
-      </div></div>
-    ${g.sources?`<div class="note" style="margin-top:9px">${g.sources}</div>`:''}
+    <div class="gh"><div class="gname">${g.name}${g.active?'':' <span class="tag">paused</span>'}</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px;margin:8px 0 13px">
+      ${donut(pct,color,124,track)}
+      <div class="num" style="font-size:16px;font-weight:600;color:var(--ink)">${money(g.saved)} <span style="color:var(--muted)">/ ${money(g.target)}</span></div>
+      ${funding?`<div class="vals num" style="font-size:13px;color:var(--muted);font-weight:600">${funding}</div>`:''}
+      ${monthsLine?`<div class="vals num" style="font-size:12.5px;color:var(--faint)">${monthsLine}</div>`:''}
+    </div>
+    ${g.sources?`<div class="note">${g.sources}</div>`:''}
     <div class="gactions">
       <button class="minibtn brand" onclick="addToGoal('${g.id}')">Add funds</button>
       <button class="minibtn" onclick="editGoal('${g.id}')">Edit</button>
@@ -1100,7 +1104,7 @@ function renderCash(){
   html += `<div class="sectlabel">This month, planned in vs out</div><div class="card">`;
   html += barChart([
     {label:'In',value:inc,color:'var(--safe)'},
-    {label:'Out',value:out,color:'var(--brand)'}
+    {label:'Out',value:out,color:'var(--red)'}
   ]);
   html += `<div class="alloc" style="margin-top:14px">
     <div class="b"><div class="k">In (income)</div><div class="v num">${money(inc)}</div></div><div class="sep"></div>
@@ -1126,14 +1130,15 @@ function renderCash(){
 }
 function barChart(items){
   const max=Math.max(...items.map(i=>i.value),1);
-  const W=300,H=150,bw=80,gap=80,base=H-24;
+  const W=300,H=176,m=30,bw=84,gap=72,base=H-28,top=34;
+  const maxBarH=base-top;
   let bars='';
   items.forEach((it,i)=>{
-    const h=(it.value/max)*(base-10);
-    const x=50+i*(bw+gap);
-    bars+=`<rect x="${x}" y="${base-h}" width="${bw}" height="${h}" rx="8" fill="${it.color}"/>
-      <text x="${x+bw/2}" y="${base+16}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="Hanken Grotesk">${it.label}</text>
-      <text x="${x+bw/2}" y="${base-h-7}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)" font-family="Hanken Grotesk">${money(it.value)}</text>`;
+    const h=Math.max(2,(it.value/max)*maxBarH);
+    const x=m+i*(bw+gap);
+    bars+=`<rect x="${x}" y="${base-h}" width="${bw}" height="${h}" rx="9" fill="${it.color}"/>
+      <text x="${x+bw/2}" y="${base+19}" text-anchor="middle" font-size="13" fill="var(--muted)" font-family="Hanken Grotesk">${it.label}</text>
+      <text x="${x+bw/2}" y="${base-h-9}" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--ink)" font-family="Hanken Grotesk">${money(it.value)}</text>`;
   });
   return `<div class="chartwrap"><svg viewBox="0 0 ${W} ${H}">${bars}</svg></div>`;
 }
